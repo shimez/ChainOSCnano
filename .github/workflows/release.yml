@@ -53,7 +53,8 @@ jobs:
           FIRMWARE_NAME: ${{ steps.version.outputs.firmware_name }}
         run: |
           mkdir -p dist
-          python "$HOME/.platformio/packages/tool-esptoolpy/esptool.py" \
+          "$HOME/.platformio/penv/bin/python" \
+            "$HOME/.platformio/packages/tool-esptoolpy/esptool.py" \
             --chip esp32c6 merge_bin \
             -o "dist/$FIRMWARE_NAME" \
             --flash_mode dio \
