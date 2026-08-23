@@ -299,11 +299,9 @@ bool oscSaveTarget(const String& host, uint16_t port) {
   return true;
 }
 
-void oscSendDualKey(uint8_t keyNumber, bool pressed) {
-  const String identity = String("dualkey:") + keyNumber;
+void oscSendNanoButton(bool pressed) {
   KeySetting* setting = keySettingsEnsure(
-      identity, String("DualKey KEY") + keyNumber,
-      String("/chainoscnano/dualkey/key") + keyNumber);
+      "nano:button", "M5NanoC6 Button", "/chainoscnano/nano/button");
   if (setting != nullptr) sendKeyValue(*setting, pressed);
 }
 

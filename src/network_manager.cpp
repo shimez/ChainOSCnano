@@ -445,13 +445,14 @@ bool keySettingFromJson(JsonObjectConst object, KeySetting& candidate,
     candidate.displayName = object["displayName"].as<const char*>();
     candidate.identity.trim();
     candidate.displayName.trim();
-    const bool validIdentity = candidate.identity.startsWith("chain:") &&
-                               candidate.identity.length() > 6;
+    const bool validIdentity = candidate.identity == "nano:button" ||
+                               (candidate.identity.startsWith("chain:") &&
+                                candidate.identity.length() > 6);
     if (!validIdentity || candidate.displayName.isEmpty() || candidate.displayName.length() > 64) {
       error = tr("Device identity or name is invalid.", "デバイス識別子または名前が正しくありません。");
       return false;
     }
-    candidate.builtIn = false;
+    candidate.builtIn = candidate.identity == "nano:button";
   }
   JsonObjectConst key = object["key"].as<JsonObjectConst>();
   if (key.isNull() || !key["mode"].is<int>() ||
@@ -724,7 +725,7 @@ String pressReleaseHtml(const String& group, const KeySetting& setting,
 
 void appendKeyCard(String& html, const KeySetting& setting, size_t cardIndex) {
   const String collapseKey = String(cardIndex) + "-" + setting.identity;
-  const String deviceLabel = setting.builtIn ? "DualKey" : "Key";
+  const String deviceLabel = setting.builtIn ? "M5NanoC6" : "Key";
   html += F("<div class='card device' data-device-index='");
   html += cardIndex;
   html += F("' data-collapse-key='");
@@ -1087,6 +1088,16 @@ void sendStatusPage(const String& message = String()) {
   if (!flushHtml("COMMON_SENT")) return;
 
   size_t cardIndex = 0;
+  // The M5NanoC6 body button is a fixed, always-connected Key. Render it
+  // before the external Chain devices, matching ChainOSCmini's built-in keys.
+  for (size_t index = 0; index < keySettingsCount(); ++index) {
+    KeySetting* setting = keySettingsAt(index);
+    if (setting != nullptr && setting->builtIn) {
+      appendKeyCard(html, *setting, cardIndex++);
+      ++sentCards;
+      if (!flushHtml("DEVICE_SENT")) return;
+    }
+  }
   // Preserve the physical order reported by the NanoC6 GPIO1/2 Chain port.
   const size_t connectedChainCount = chainProbeConnectedDeviceCount();
   for (size_t physicalIndex = 0; physicalIndex < connectedChainCount;
@@ -1564,6 +1575,18 @@ RequestedDevice requestedConnectedDevice() {
   const int requested = text.toInt();
   int cardIndex = 0;
 
+  // Built-in cards precede external Chain devices in handleRoot().
+  for (size_t index = 0; index < keySettingsCount(); ++index) {
+    KeySetting* setting = keySettingsAt(index);
+    if (setting != nullptr && setting->builtIn) {
+      if (cardIndex == requested) {
+        result.key = setting;
+        return result;
+      }
+      ++cardIndex;
+    }
+  }
+
   // Chain cards are rendered in physical-port order. Resolve the request by
   // that same topology so Identify and preset operations target the card the
   // user actually selected.
@@ -1638,7 +1661,9 @@ void handleIdentifyDevice() {
                    "選択した接続済みデバイスが見つかりません。"));
     return;
   }
-  const bool changed = chainProbeIdentifyDevice(identity);
+  const bool changed = identity == "nano:button"
+                           ? nanoIdentifyDevice(identity)
+                           : chainProbeIdentifyDevice(identity);
   if (!changed) {
     server.send(502, "text/plain; charset=utf-8",
                 tr("The device LED could not be changed.",

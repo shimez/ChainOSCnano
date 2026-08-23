@@ -6,6 +6,20 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-24
+
+### Added
+
+- M5NanoC6本体ボタンを設定可能な内蔵Keyとして追加
+- 本体ボタンのPress／Release、複数OSCメッセージ、Sequence、設定保存に対応
+- 本体ボタン設定の全体JSONおよびデバイスプリセット入出力に対応
+- 本体ボタン押下中とIdentify Device実行中のオレンジLED表示
+
+### Changed
+
+- ChainOSCnanoポータルとWeb Installerをアンバー系のブランドカラーへ変更
+- faviconを他のChainOSCシリーズと共通の鎖モチーフへ統一
+
 ## [0.6.0] - 2026-08-24
 
 ### Added
@@ -102,7 +116,8 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 - M5NanoC6内蔵RGB LEDの初期化
 - v0.1.0向けREADME、テスト手順、第三者ライセンス表記
 
-[Unreleased]: https://github.com/shimez/ChainOSCnano/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/shimez/ChainOSCnano/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/shimez/ChainOSCnano/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/shimez/ChainOSCnano/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/shimez/ChainOSCnano/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/shimez/ChainOSCnano/compare/v0.3.0...v0.4.0

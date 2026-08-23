@@ -7,9 +7,9 @@ M5NanoC6とM5Stack Chainデバイスを組み合わせ、コンパクトなOSC�
 
 ## 現在のバージョン
 
-### v0.6.0 — Shared presets and multi-device support
+### v0.7.0 — M5NanoC6 button support
 
-Key／Encoder／Angle／ToF／Joystickをブラウザーから設定でき、ChainOSCシリーズ共通のデバイスプリセットと全体設定JSONを利用できるバージョンです。設定はUID単位で保存され、抜き差しや接続順変更後も復元されます。
+M5NanoC6本体ボタンを内蔵Keyとして利用できるバージョンです。外付けChain Keyと同じPress／Release、複数OSCメッセージ、Sequence、設定保存、デバイスプリセットに対応します。
 
 v0.1.0の実機検証では次の項目を確認済みです。
 
@@ -87,6 +87,14 @@ v0.6.0では次の機能を追加しています。
 - Key／Encoderクリック／Joystickクリックの複数メッセージとSequence設定
 - デバイスカードの「…」メニューと10秒間のオレンジLED識別
 - 不正なJSON、異なるデバイス種類、入力値、容量の検証
+
+v0.7.0では次の機能を追加しています。
+
+- M5NanoC6本体ボタンをWeb UIの内蔵Keyとして表示
+- 本体ボタンのPress／Release、複数OSCメッセージ、Sequence設定
+- 本体ボタン設定の保存・復元とJSONプリセット入出力
+- 本体ボタン押下中とIdentify Device実行中のオレンジLED表示
+- ChainOSCnanoポータル、Web Installer、faviconのアンバー系デザイン
 
 ## ドキュメントとファームウェア
 
