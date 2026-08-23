@@ -26,6 +26,14 @@ ChainOSCnanoはMIT Licenseで公開していますが、ビルド時に利用す
 
 ライセンス本文は[`licenses/LGPL-3.0.txt`](licenses/LGPL-3.0.txt)を参照してください。
 
+### ArduinoOSC
+
+- Project: ArduinoOSC
+- License: MIT License
+- Source: https://github.com/hideakitai/ArduinoOSC
+
+ArduinoOSCが利用するArxContainer、ArxSmartPtr、ArxTypeTraits、DebugLogもMIT Licenseです。各依存関係とバージョンは`platformio.ini`およびPlatformIOの依存関係解決結果を参照してください。
+
 ## ビルドツール
 
 PlatformIO、pioarduino platform-espressif32、esptoolおよびコンパイラー等はビルドや書き込みに使用します。これらのツール自体は通常、配布するファームウェアへそのまま組み込まれるものではありません。

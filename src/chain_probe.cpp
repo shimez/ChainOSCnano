@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "config.h"
+#include "osc_manager.h"
 
 namespace {
 
@@ -249,6 +250,7 @@ bool pollKeys() {
     printUid(device.uid);
     Serial.printf(" state=%s led=%s\n", pressed ? "PRESSED" : "RELEASED",
                   pressed ? "ORANGE" : "BLUE");
+    oscSendKeyEvent(device.uid, UID_SIZE, pressed);
   }
   return false;
 }

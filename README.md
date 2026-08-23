@@ -7,9 +7,9 @@ M5NanoC6とM5Stack Chainデバイスを組み合わせ、コンパクトなOSC�
 
 ## 現在のバージョン
 
-### v0.3.0 — Wi-Fi provisioning and captive portal
+### v0.4.0 — Chain Key OSC transmission
 
-Chain Keyの入力監視とLED制御に加え、Wi-Fi接続、AP Mode、キャプティブポータル、mDNS、ブラウザーによるWi-Fi設定を実装したバージョンです。OSC送信とChainデバイス設定UIはまだ実装されていません。
+Chain Keyの入力に応じたOSC送信と、ブラウザーからのOSC送信先設定を追加したバージョンです。Chainデバイスごとの詳細設定UIはまだ実装されていません。
 
 v0.1.0の実機検証では次の項目を確認済みです。
 
@@ -40,6 +40,26 @@ v0.3.0では次のネットワーク機能を追加しています。
 - 接続後は`http://chainoscnano.local/`またはIPアドレスで状態を確認する
 - 接続後にWi-Fiが切断された場合は、AP Modeへ戻らず自動再接続する
 - ブラウザーからWi-Fi設定を削除してセットアップ状態へ戻せる
+
+v0.4.0では次のOSC機能を追加しています。
+
+- OSC送信先のIPv4アドレスとUDPポートをブラウザーから設定できる
+- OSC送信先を保存し、再起動後も復元できる
+- Chain Keyを押した時に`Int 1`、離した時に`Int 0`を送信する
+- UIDを含む固定OSC Addressを使用し、抜き差しや接続順変更の影響を受けない
+- Wi-Fi切断中はOSC送信を抑止し、再接続後に自動的に送信を再開する
+
+初期OSC送信先は`192.168.1.100:9000`です。各Chain Keyの初期OSC Addressは次の形式です。
+
+```text
+/chainoscnano/key/<24桁UID>
+```
+
+例：
+
+```text
+/chainoscnano/key/78000C001651343430383836
+```
 
 ## 初回Wi-Fi設定
 
@@ -91,7 +111,7 @@ M5NanoC6は2.4 GHz帯のWi-Fiを使用します。設定ページには認証機
 
 1. Arduino IDEで`ChainOSCnano.ino`を開きます。
 2. ESP32 Arduino Core 3.xを導入します。
-3. M5ChainとAdafruit NeoPixelをライブラリマネージャーから導入します。
+3. M5Chain、Adafruit NeoPixel、ArduinoOSCをライブラリマネージャーから導入します。
 4. ESP32-C6に対応するボードを選択します。
 5. コンパイルしてM5NanoC6へ書き込みます。
 
@@ -119,7 +139,6 @@ ESP32-C6のArduinoフレームワークを利用するため、`platformio.ini`�
 
 ## 今後の予定
 
-- OSC送信
 - Chainデバイス設定用Web UI
 - 設定保存とJSON／プリセット互換
 - 対応Chainデバイスの拡大

@@ -10,6 +10,7 @@
 
 #include "config.h"
 #include "nano_hardware.h"
+#include "osc_manager.h"
 
 namespace {
 
@@ -112,7 +113,7 @@ void sendProvisioningPage(const String& error = "") {
   sendPage(html);
 }
 
-void sendConnectedPage() {
+void sendConnectedPage(const String& message = "", bool error = false) {
   const bool japanese = isJapaneseRequest();
   String html = pageStart("ChainOSCnano", japanese);
   html += F("<h1>ChainOSCnano</h1><div class='card'><h2>");
@@ -126,6 +127,28 @@ void sendConnectedPage() {
   html += F(".local/<br>Version: ");
   html += APP_VERSION;
   html += F("</p></div><div class='card'><h2>");
+  html += tr(japanese, "OSC destination", "OSC送信先");
+  html += F("</h2>");
+  if (!message.isEmpty()) {
+    html += error ? F("<p style='color:#c73c4a'>") : F("<p class='status'>");
+    html += htmlEscape(message);
+    html += F("</p>");
+  }
+  html += F("<form method='POST' action='/save-osc'><label>");
+  html += tr(japanese, "IPv4 address", "IPv4アドレス");
+  html += F("</label><input name='host' inputmode='decimal' maxlength='15' required value='");
+  html += htmlEscape(oscTargetHost());
+  html += F("'><label>");
+  html += tr(japanese, "UDP port", "UDPポート");
+  html += F("</label><input name='port' type='number' min='1' max='65535' required value='");
+  html += String(oscTargetPort());
+  html += F("'><button type='submit'>");
+  html += tr(japanese, "Save OSC destination", "OSC送信先を保存");
+  html += F("</button></form><p class='note'>");
+  html += tr(japanese,
+             "Each Chain Key sends Int 1 when pressed and Int 0 when released.",
+             "各Chain Keyは、押した時にInt 1、離した時にInt 0を送信します。");
+  html += F("</p></div><div class='card'><h2>");
   html += tr(japanese, "Wi-Fi settings", "Wi-Fi設定");
   html += F("</h2><form method='POST' action='/forget-wifi'><button class='danger' type='submit'>");
   html += tr(japanese, "Delete Wi-Fi settings", "Wi-Fi設定を削除");
@@ -136,6 +159,42 @@ void sendConnectedPage() {
 void handleRoot() {
   if (networkState == NetworkState::AP_MODE) sendProvisioningPage();
   else sendConnectedPage();
+}
+
+void handleSaveOsc() {
+  const bool japanese = isJapaneseRequest();
+  String host = server.arg("host");
+  host.trim();
+  const String portText = server.arg("port");
+  IPAddress parsedAddress;
+  bool portDigitsOnly = !portText.isEmpty();
+  for (size_t index = 0; portDigitsOnly && index < portText.length(); ++index) {
+    portDigitsOnly = isdigit(static_cast<unsigned char>(portText[index]));
+  }
+  const unsigned long parsedPort = portText.toInt();
+  if (!parsedAddress.fromString(host)) {
+    sendConnectedPage(
+        tr(japanese, "Enter a valid IPv4 address.",
+           "正しいIPv4アドレスを入力してください。"),
+        true);
+    return;
+  }
+  if (!portDigitsOnly || parsedPort < 1 || parsedPort > 65535) {
+    sendConnectedPage(
+        tr(japanese, "UDP port must be between 1 and 65535.",
+           "UDPポートは1～65535で入力してください。"),
+        true);
+    return;
+  }
+  if (!oscSaveTarget(host, static_cast<uint16_t>(parsedPort))) {
+    sendConnectedPage(
+        tr(japanese, "Could not save the OSC destination.",
+           "OSC送信先を保存できませんでした。"),
+        true);
+    return;
+  }
+  sendConnectedPage(
+      tr(japanese, "OSC destination saved.", "OSC送信先を保存しました。"));
 }
 
 bool validWifiInput(const String& ssid, const String& password,
@@ -232,6 +291,7 @@ void registerRoutes() {
   server.on("/", HTTP_GET, handleRoot);
   server.on("/save-wifi", HTTP_POST, handleSaveWifi);
   server.on("/forget-wifi", HTTP_POST, handleForgetWifi);
+  server.on("/save-osc", HTTP_POST, handleSaveOsc);
   server.on("/generate_204", HTTP_ANY, handleRoot);
   server.on("/hotspot-detect.html", HTTP_ANY, handleRoot);
   server.on("/ncsi.txt", HTTP_ANY, handleRoot);

@@ -6,6 +6,18 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-24
+
+### Added
+
+- OSC送信先IPv4アドレスとUDPポートのWeb設定
+- OSC送信先のPreferences保存と再起動後の復元
+- Chain Keyを押した時の`Int 1`、離した時の`Int 0`送信
+- Chain Key UIDを含む接続順に依存しない固定OSC Address
+- Wi-Fi切断中のOSC送信抑止と再接続後の自動再開
+- OSC送信・抑止内容のシリアル診断ログ
+- ArduinoOSCのPlatformIO依存関係と第三者ライセンス表記
+
 ## [0.3.0] - 2026-08-24
 
 ### Added
@@ -57,7 +69,8 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 - M5NanoC6内蔵RGB LEDの初期化
 - v0.1.0向けREADME、テスト手順、第三者ライセンス表記
 
-[Unreleased]: https://github.com/shimez/ChainOSCnano/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/shimez/ChainOSCnano/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/shimez/ChainOSCnano/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/shimez/ChainOSCnano/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/shimez/ChainOSCnano/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/shimez/ChainOSCnano/releases/tag/v0.1.0

@@ -3,7 +3,7 @@
 #include <Arduino.h>
 
 static constexpr const char* APP_NAME = "ChainOSCnano";
-static constexpr const char* APP_VERSION = "0.3.0";
+static constexpr const char* APP_VERSION = "0.4.0";
 static constexpr uint32_t SERIAL_BAUD = 115200;
 static constexpr unsigned long BOOT_DIAGNOSTICS_DELAY_MS = 5000;
 static constexpr unsigned long HEARTBEAT_INTERVAL_MS = 5000;
@@ -39,3 +39,7 @@ static constexpr unsigned long WIFI_CONNECT_TIMEOUT_MS = 15000;
 static constexpr unsigned long WIFI_CONNECT_LED_BLINK_MS = 500;
 static constexpr unsigned long NETWORK_RESTART_DELAY_MS = 1200;
 static constexpr uint8_t CAPTIVE_DNS_PORT = 53;
+
+// OSC target used until the user saves a different destination.
+static constexpr const char* OSC_DEFAULT_HOST = "192.168.1.100";
+static constexpr uint16_t OSC_DEFAULT_PORT = 9000;

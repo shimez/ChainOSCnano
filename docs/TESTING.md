@@ -24,7 +24,7 @@ PlatformIOでのビルドと書き込みは、使用するPC環境で別途確�
 
 115200 bpsでシリアルモニターを開き、次の内容を確認します。
 
-- `ChainOSCnano v0.3.0`が表示される
+- `ChainOSCnano v0.4.0`が表示される
 - チップがESP32-C6として表示される
 - Flash容量が4 MBとして表示される
 - PSRAMが0 bytesとして表示される
@@ -127,9 +127,38 @@ PlatformIOでのビルドと書き込みは、使用するPC環境で別途確�
 1. 通常接続中の状態ページで「Wi-Fi設定を削除」を実行します。
 2. 自動再起動後、`ChainOSCnano-Setup`が再び表示されることを確認します。
 
+## v0.4.0のテスト手順
+
+### OSC送信先の設定と復元
+
+1. Wi-Fi接続後、`http://chainoscnano.local/`またはIPアドレスで状態ページを開きます。
+2. OSC送信先へ受信PCのIPv4アドレスとUDPポートを入力して保存します。
+3. 正しくないIPv4アドレス、0、65536などの不正なポートが拒否されることを確認します。
+4. M5NanoC6を再起動し、保存したIPv4アドレスとUDPポートがページへ復元されることを確認します。
+
+### Chain KeyからのOSC送信
+
+1. OSC受信側を設定したUDPポートで待ち受けます。
+2. Chain Keyを押し、`/chainoscnano/key/<24桁UID>`へ`Int 1`が届くことを確認します。
+3. 同じKeyを離し、同じAddressへ`Int 0`が届くことを確認します。
+4. 複数のChain Keyで、それぞれ異なるUIDを含むAddressが使用されることを確認します。
+5. Chain Keyを抜き差ししたり接続順を変更したりしても、同じUIDのKeyは同じAddressを使用することを確認します。
+6. シリアルログに送信先、Address、型、値が表示されることを確認します。
+
+```text
+[ChainOSCnano][OSC] sent target=192.168.1.100:9000 address=/chainoscnano/key/... type=Int value=1
+[ChainOSCnano][OSC] sent target=192.168.1.100:9000 address=/chainoscnano/key/... type=Int value=0
+```
+
+### Wi-Fi切断中の動作
+
+1. Wi-Fi接続中にアクセスポイントを停止します。
+2. Chain Keyを操作してもOSC受信側へ届かないことを確認します。
+3. シリアルログに`skipped reason=wifi_disconnected`が表示されることを確認します。
+4. アクセスポイントを復旧し、本体を再起動せずOSC送信が再開することを確認します。
+
 ## 現時点で未実装
 
-- OSC送信
 - Chainデバイス設定用Web UI
 - 設定保存、JSONバックアップ、デバイスプリセット
 

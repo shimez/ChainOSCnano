@@ -7,6 +7,7 @@
 #include "diagnostics.h"
 #include "nano_hardware.h"
 #include "network_manager.h"
+#include "osc_manager.h"
 
 namespace {
 
@@ -21,6 +22,7 @@ void appSetup() {
 
   nanoHardwareSetup();
   chainProbeSetup();
+  oscSetup();
   networkSetup();
 }
 
