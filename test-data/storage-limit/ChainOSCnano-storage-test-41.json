@@ -1,0 +1,1238 @@
+{
+  "format": "ChainOSCnano-settings",
+  "schemaVersion": 1,
+  "firmwareVersion": "0.6.0",
+  "wifiCredentialsIncluded": false,
+  "global": {
+    "oscHost": "192.168.0.12",
+    "oscPort": 9000,
+    "uiLanguage": "ja"
+  },
+  "devices": [
+    {
+      "identity": "chain:F00000000000000000000001",
+      "deviceType": 1,
+      "displayName": "Storage Test 01",
+      "builtIn": false,
+      "deviceTypeName": "Encoder",
+      "encoder": {
+        "rotationAddress": "/chainoscnano/stress/1/encoder",
+        "sendIncrement": true,
+        "absoluteInputMin": 0.0,
+        "absoluteInputMax": 100.0,
+        "incrementScale": 1.0,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        },
+        "clickMode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/1/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/1/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/1/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000002",
+      "deviceType": 2,
+      "displayName": "Storage Test 02",
+      "builtIn": false,
+      "deviceTypeName": "Angle",
+      "angle": {
+        "address": "/chainoscnano/stress/2/angle",
+        "use12bit": true,
+        "deadband": 2,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000003",
+      "deviceType": 3,
+      "displayName": "Storage Test 03",
+      "builtIn": false,
+      "deviceTypeName": "Key",
+      "key": {
+        "mode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/3/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/3/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/3/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000004",
+      "deviceType": 4,
+      "displayName": "Storage Test 04",
+      "builtIn": false,
+      "deviceTypeName": "Joystick",
+      "joystick": {
+        "xAddress": "/chainoscnano/stress/4/x",
+        "yAddress": "/chainoscnano/stress/4/y",
+        "deadband": 8,
+        "invertX": false,
+        "invertY": false,
+        "range": {
+          "outMin": -1.0,
+          "outMax": 1.0,
+          "type": 0
+        },
+        "clickMode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/4/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/4/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/4/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000005",
+      "deviceType": 5,
+      "displayName": "Storage Test 05",
+      "builtIn": false,
+      "deviceTypeName": "ToF",
+      "tof": {
+        "address": "/chainoscnano/stress/5/tof",
+        "deadband": 10,
+        "maxDistanceMm": 1000,
+        "nearValueHigh": true,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000006",
+      "deviceType": 1,
+      "displayName": "Storage Test 06",
+      "builtIn": false,
+      "deviceTypeName": "Encoder",
+      "encoder": {
+        "rotationAddress": "/chainoscnano/stress/6/encoder",
+        "sendIncrement": true,
+        "absoluteInputMin": 0.0,
+        "absoluteInputMax": 100.0,
+        "incrementScale": 1.0,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        },
+        "clickMode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/6/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/6/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/6/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000007",
+      "deviceType": 2,
+      "displayName": "Storage Test 07",
+      "builtIn": false,
+      "deviceTypeName": "Angle",
+      "angle": {
+        "address": "/chainoscnano/stress/7/angle",
+        "use12bit": true,
+        "deadband": 2,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000008",
+      "deviceType": 3,
+      "displayName": "Storage Test 08",
+      "builtIn": false,
+      "deviceTypeName": "Key",
+      "key": {
+        "mode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/8/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/8/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/8/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000009",
+      "deviceType": 4,
+      "displayName": "Storage Test 09",
+      "builtIn": false,
+      "deviceTypeName": "Joystick",
+      "joystick": {
+        "xAddress": "/chainoscnano/stress/9/x",
+        "yAddress": "/chainoscnano/stress/9/y",
+        "deadband": 8,
+        "invertX": false,
+        "invertY": false,
+        "range": {
+          "outMin": -1.0,
+          "outMax": 1.0,
+          "type": 0
+        },
+        "clickMode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/9/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/9/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/9/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F0000000000000000000000A",
+      "deviceType": 5,
+      "displayName": "Storage Test 10",
+      "builtIn": false,
+      "deviceTypeName": "ToF",
+      "tof": {
+        "address": "/chainoscnano/stress/10/tof",
+        "deadband": 10,
+        "maxDistanceMm": 1000,
+        "nearValueHigh": true,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        }
+      }
+    },
+    {
+      "identity": "chain:F0000000000000000000000B",
+      "deviceType": 1,
+      "displayName": "Storage Test 11",
+      "builtIn": false,
+      "deviceTypeName": "Encoder",
+      "encoder": {
+        "rotationAddress": "/chainoscnano/stress/11/encoder",
+        "sendIncrement": true,
+        "absoluteInputMin": 0.0,
+        "absoluteInputMax": 100.0,
+        "incrementScale": 1.0,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        },
+        "clickMode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/11/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/11/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/11/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F0000000000000000000000C",
+      "deviceType": 2,
+      "displayName": "Storage Test 12",
+      "builtIn": false,
+      "deviceTypeName": "Angle",
+      "angle": {
+        "address": "/chainoscnano/stress/12/angle",
+        "use12bit": true,
+        "deadband": 2,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        }
+      }
+    },
+    {
+      "identity": "chain:F0000000000000000000000D",
+      "deviceType": 3,
+      "displayName": "Storage Test 13",
+      "builtIn": false,
+      "deviceTypeName": "Key",
+      "key": {
+        "mode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/13/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/13/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/13/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F0000000000000000000000E",
+      "deviceType": 4,
+      "displayName": "Storage Test 14",
+      "builtIn": false,
+      "deviceTypeName": "Joystick",
+      "joystick": {
+        "xAddress": "/chainoscnano/stress/14/x",
+        "yAddress": "/chainoscnano/stress/14/y",
+        "deadband": 8,
+        "invertX": false,
+        "invertY": false,
+        "range": {
+          "outMin": -1.0,
+          "outMax": 1.0,
+          "type": 0
+        },
+        "clickMode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/14/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/14/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/14/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F0000000000000000000000F",
+      "deviceType": 5,
+      "displayName": "Storage Test 15",
+      "builtIn": false,
+      "deviceTypeName": "ToF",
+      "tof": {
+        "address": "/chainoscnano/stress/15/tof",
+        "deadband": 10,
+        "maxDistanceMm": 1000,
+        "nearValueHigh": true,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000010",
+      "deviceType": 1,
+      "displayName": "Storage Test 16",
+      "builtIn": false,
+      "deviceTypeName": "Encoder",
+      "encoder": {
+        "rotationAddress": "/chainoscnano/stress/16/encoder",
+        "sendIncrement": true,
+        "absoluteInputMin": 0.0,
+        "absoluteInputMax": 100.0,
+        "incrementScale": 1.0,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        },
+        "clickMode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/16/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/16/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/16/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000011",
+      "deviceType": 2,
+      "displayName": "Storage Test 17",
+      "builtIn": false,
+      "deviceTypeName": "Angle",
+      "angle": {
+        "address": "/chainoscnano/stress/17/angle",
+        "use12bit": true,
+        "deadband": 2,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000012",
+      "deviceType": 3,
+      "displayName": "Storage Test 18",
+      "builtIn": false,
+      "deviceTypeName": "Key",
+      "key": {
+        "mode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/18/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/18/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/18/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000013",
+      "deviceType": 4,
+      "displayName": "Storage Test 19",
+      "builtIn": false,
+      "deviceTypeName": "Joystick",
+      "joystick": {
+        "xAddress": "/chainoscnano/stress/19/x",
+        "yAddress": "/chainoscnano/stress/19/y",
+        "deadband": 8,
+        "invertX": false,
+        "invertY": false,
+        "range": {
+          "outMin": -1.0,
+          "outMax": 1.0,
+          "type": 0
+        },
+        "clickMode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/19/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/19/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/19/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000014",
+      "deviceType": 5,
+      "displayName": "Storage Test 20",
+      "builtIn": false,
+      "deviceTypeName": "ToF",
+      "tof": {
+        "address": "/chainoscnano/stress/20/tof",
+        "deadband": 10,
+        "maxDistanceMm": 1000,
+        "nearValueHigh": true,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000015",
+      "deviceType": 1,
+      "displayName": "Storage Test 21",
+      "builtIn": false,
+      "deviceTypeName": "Encoder",
+      "encoder": {
+        "rotationAddress": "/chainoscnano/stress/21/encoder",
+        "sendIncrement": true,
+        "absoluteInputMin": 0.0,
+        "absoluteInputMax": 100.0,
+        "incrementScale": 1.0,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        },
+        "clickMode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/21/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/21/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/21/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000016",
+      "deviceType": 2,
+      "displayName": "Storage Test 22",
+      "builtIn": false,
+      "deviceTypeName": "Angle",
+      "angle": {
+        "address": "/chainoscnano/stress/22/angle",
+        "use12bit": true,
+        "deadband": 2,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000017",
+      "deviceType": 3,
+      "displayName": "Storage Test 23",
+      "builtIn": false,
+      "deviceTypeName": "Key",
+      "key": {
+        "mode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/23/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/23/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/23/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000018",
+      "deviceType": 4,
+      "displayName": "Storage Test 24",
+      "builtIn": false,
+      "deviceTypeName": "Joystick",
+      "joystick": {
+        "xAddress": "/chainoscnano/stress/24/x",
+        "yAddress": "/chainoscnano/stress/24/y",
+        "deadband": 8,
+        "invertX": false,
+        "invertY": false,
+        "range": {
+          "outMin": -1.0,
+          "outMax": 1.0,
+          "type": 0
+        },
+        "clickMode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/24/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/24/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/24/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000019",
+      "deviceType": 5,
+      "displayName": "Storage Test 25",
+      "builtIn": false,
+      "deviceTypeName": "ToF",
+      "tof": {
+        "address": "/chainoscnano/stress/25/tof",
+        "deadband": 10,
+        "maxDistanceMm": 1000,
+        "nearValueHigh": true,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        }
+      }
+    },
+    {
+      "identity": "chain:F0000000000000000000001A",
+      "deviceType": 1,
+      "displayName": "Storage Test 26",
+      "builtIn": false,
+      "deviceTypeName": "Encoder",
+      "encoder": {
+        "rotationAddress": "/chainoscnano/stress/26/encoder",
+        "sendIncrement": true,
+        "absoluteInputMin": 0.0,
+        "absoluteInputMax": 100.0,
+        "incrementScale": 1.0,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        },
+        "clickMode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/26/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/26/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/26/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F0000000000000000000001B",
+      "deviceType": 2,
+      "displayName": "Storage Test 27",
+      "builtIn": false,
+      "deviceTypeName": "Angle",
+      "angle": {
+        "address": "/chainoscnano/stress/27/angle",
+        "use12bit": true,
+        "deadband": 2,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        }
+      }
+    },
+    {
+      "identity": "chain:F0000000000000000000001C",
+      "deviceType": 3,
+      "displayName": "Storage Test 28",
+      "builtIn": false,
+      "deviceTypeName": "Key",
+      "key": {
+        "mode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/28/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/28/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/28/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F0000000000000000000001D",
+      "deviceType": 4,
+      "displayName": "Storage Test 29",
+      "builtIn": false,
+      "deviceTypeName": "Joystick",
+      "joystick": {
+        "xAddress": "/chainoscnano/stress/29/x",
+        "yAddress": "/chainoscnano/stress/29/y",
+        "deadband": 8,
+        "invertX": false,
+        "invertY": false,
+        "range": {
+          "outMin": -1.0,
+          "outMax": 1.0,
+          "type": 0
+        },
+        "clickMode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/29/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/29/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/29/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F0000000000000000000001E",
+      "deviceType": 5,
+      "displayName": "Storage Test 30",
+      "builtIn": false,
+      "deviceTypeName": "ToF",
+      "tof": {
+        "address": "/chainoscnano/stress/30/tof",
+        "deadband": 10,
+        "maxDistanceMm": 1000,
+        "nearValueHigh": true,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        }
+      }
+    },
+    {
+      "identity": "chain:F0000000000000000000001F",
+      "deviceType": 1,
+      "displayName": "Storage Test 31",
+      "builtIn": false,
+      "deviceTypeName": "Encoder",
+      "encoder": {
+        "rotationAddress": "/chainoscnano/stress/31/encoder",
+        "sendIncrement": true,
+        "absoluteInputMin": 0.0,
+        "absoluteInputMax": 100.0,
+        "incrementScale": 1.0,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        },
+        "clickMode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/31/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/31/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/31/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000020",
+      "deviceType": 2,
+      "displayName": "Storage Test 32",
+      "builtIn": false,
+      "deviceTypeName": "Angle",
+      "angle": {
+        "address": "/chainoscnano/stress/32/angle",
+        "use12bit": true,
+        "deadband": 2,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000021",
+      "deviceType": 3,
+      "displayName": "Storage Test 33",
+      "builtIn": false,
+      "deviceTypeName": "Key",
+      "key": {
+        "mode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/33/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/33/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/33/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000022",
+      "deviceType": 4,
+      "displayName": "Storage Test 34",
+      "builtIn": false,
+      "deviceTypeName": "Joystick",
+      "joystick": {
+        "xAddress": "/chainoscnano/stress/34/x",
+        "yAddress": "/chainoscnano/stress/34/y",
+        "deadband": 8,
+        "invertX": false,
+        "invertY": false,
+        "range": {
+          "outMin": -1.0,
+          "outMax": 1.0,
+          "type": 0
+        },
+        "clickMode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/34/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/34/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/34/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000023",
+      "deviceType": 5,
+      "displayName": "Storage Test 35",
+      "builtIn": false,
+      "deviceTypeName": "ToF",
+      "tof": {
+        "address": "/chainoscnano/stress/35/tof",
+        "deadband": 10,
+        "maxDistanceMm": 1000,
+        "nearValueHigh": true,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000024",
+      "deviceType": 1,
+      "displayName": "Storage Test 36",
+      "builtIn": false,
+      "deviceTypeName": "Encoder",
+      "encoder": {
+        "rotationAddress": "/chainoscnano/stress/36/encoder",
+        "sendIncrement": true,
+        "absoluteInputMin": 0.0,
+        "absoluteInputMax": 100.0,
+        "incrementScale": 1.0,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        },
+        "clickMode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/36/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/36/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/36/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000025",
+      "deviceType": 2,
+      "displayName": "Storage Test 37",
+      "builtIn": false,
+      "deviceTypeName": "Angle",
+      "angle": {
+        "address": "/chainoscnano/stress/37/angle",
+        "use12bit": true,
+        "deadband": 2,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000026",
+      "deviceType": 3,
+      "displayName": "Storage Test 38",
+      "builtIn": false,
+      "deviceTypeName": "Key",
+      "key": {
+        "mode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/38/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/38/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/38/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000027",
+      "deviceType": 4,
+      "displayName": "Storage Test 39",
+      "builtIn": false,
+      "deviceTypeName": "Joystick",
+      "joystick": {
+        "xAddress": "/chainoscnano/stress/39/x",
+        "yAddress": "/chainoscnano/stress/39/y",
+        "deadband": 8,
+        "invertX": false,
+        "invertY": false,
+        "range": {
+          "outMin": -1.0,
+          "outMax": 1.0,
+          "type": 0
+        },
+        "clickMode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/39/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/39/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/39/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000028",
+      "deviceType": 5,
+      "displayName": "Storage Test 40",
+      "builtIn": false,
+      "deviceTypeName": "ToF",
+      "tof": {
+        "address": "/chainoscnano/stress/40/tof",
+        "deadband": 10,
+        "maxDistanceMm": 1000,
+        "nearValueHigh": true,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        }
+      }
+    },
+    {
+      "identity": "chain:F00000000000000000000029",
+      "deviceType": 1,
+      "displayName": "Storage Test 41",
+      "builtIn": false,
+      "deviceTypeName": "Encoder",
+      "encoder": {
+        "rotationAddress": "/chainoscnano/stress/41/encoder",
+        "sendIncrement": true,
+        "absoluteInputMin": 0.0,
+        "absoluteInputMax": 100.0,
+        "incrementScale": 1.0,
+        "range": {
+          "outMin": 0.0,
+          "outMax": 1.0,
+          "type": 0
+        },
+        "clickMode": 0,
+        "press": [
+          {
+            "address": "/chainoscnano/stress/41/button",
+            "value": "1",
+            "type": 1
+          }
+        ],
+        "release": [
+          {
+            "address": "/chainoscnano/stress/41/button",
+            "value": "0",
+            "type": 1
+          }
+        ],
+        "sequence": {
+          "address": "/chainoscnano/stress/41/sequence",
+          "type": 0,
+          "start": 0.0,
+          "end": 10.0,
+          "step": 1.0
+        }
+      }
+    }
+  ]
+}

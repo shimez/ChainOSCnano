@@ -7,9 +7,9 @@ M5NanoC6とM5Stack Chainデバイスを組み合わせ、コンパクトなOSC�
 
 ## 現在のバージョン
 
-### v0.5.0 — Configurable Chain Key messages
+### v0.6.0 — Shared presets and multi-device support
 
-Chain Keyごとのデバイス名、複数OSCメッセージ、Sequenceをブラウザーから設定できるバージョンです。設定はUID単位で保存され、抜き差しや接続順変更後も復元されます。
+Key／Encoder／Angle／ToF／Joystickをブラウザーから設定でき、ChainOSCシリーズ共通のデバイスプリセットと全体設定JSONを利用できるバージョンです。設定はUID単位で保存され、抜き差しや接続順変更後も復元されます。
 
 v0.1.0の実機検証では次の項目を確認済みです。
 
@@ -73,9 +73,28 @@ v0.5.0では次のKey設定機能を追加しています。
 - SequenceのAddress、開始値、終了値、増減量、型、周回動作
 - SequenceモードのKeyを押した時はChain KeyのLEDを緑色で表示
 - UID単位のNVS保存と再起動後の復元
-- 保存済みChain Key設定は最大16台
+- 保存済みデバイス設定は全種類合計で最大40台
 - 接続中デバイスと保存済み未接続デバイスの分離表示
 - 未接続デバイス設定の削除
+
+v0.6.0では次の機能を追加しています。
+
+- Chain Encoder、Chain Angle、Chain ToF、Chain Joystickへの対応
+- 各デバイスの設定、OSC送信、UID単位の保存と復元
+- ChainOSCnano全体設定のバージョン付きJSONエクスポート／インポート
+- デバイス単位のJSONプリセットのエクスポート／インポート
+- `ChainOSC-device-preset`形式によるM5ChainOSC／ChainOSCminiとのプリセット互換
+- Key／Encoderクリック／Joystickクリックの複数メッセージとSequence設定
+- デバイスカードの「…」メニューと10秒間のオレンジLED識別
+- 不正なJSON、異なるデバイス種類、入力値、容量の検証
+
+## ドキュメントとファームウェア
+
+- [ChainOSCnanoポータル](https://shimez.github.io/ChainOSCnano/)
+- [クイックスタート](https://shimez.github.io/ChainOSCnano/quick-start/)
+- [日本語ユーザーガイド](https://shimez.github.io/ChainOSCnano/user-guide/)
+- [Web Installer](https://shimez.github.io/ChainOSCnano/installer/)
+- [GitHub Releases](https://github.com/shimez/ChainOSCnano/releases)
 
 ブラウザーで`http://chainoscnano.local/`または本体のIPアドレスを開き、各Chain Keyを設定して「すべての設定を保存」を押します。
 
@@ -129,9 +148,10 @@ M5NanoC6は2.4 GHz帯のWi-Fiを使用します。設定ページには認証機
 
 1. Arduino IDEで`ChainOSCnano.ino`を開きます。
 2. ESP32 Arduino Core 3.xを導入します。
-3. M5Chain、Adafruit NeoPixel、ArduinoOSCをライブラリマネージャーから導入します。
+3. M5Chain、Adafruit NeoPixel、ArduinoOSC、ArduinoJsonをライブラリマネージャーから導入します。
 4. ESP32-C6に対応するボードを選択します。
-5. コンパイルしてM5NanoC6へ書き込みます。
+5. `Tools`→`Partition Scheme`で、3 MB以上のアプリ領域を持つ構成（例：`Huge APP`）を選択します。
+6. コンパイルしてM5NanoC6へ書き込みます。
 
 Arduino IDEは`ChainOSCnano.ino`、PlatformIOは`src/main.cpp`をエントリーポイントとして使用し、どちらも`src/app.cpp`の共通実装を呼び出します。
 
@@ -149,18 +169,19 @@ pio run -e m5nanoc6
 pio run -e m5nanoc6 -t upload
 ```
 
-ESP32-C6のArduinoフレームワークを利用するため、`platformio.ini`ではpioarduino版のEspressif 32プラットフォームを使用しています。Flash容量はM5NanoC6に合わせて4 MBに設定しています。
+ESP32-C6のArduinoフレームワークを利用するため、`platformio.ini`ではpioarduino版のEspressif 32プラットフォームを使用しています。Flash容量はM5NanoC6に合わせて4 MBとし、PlatformIOでは`partitions.csv`の3 MBアプリ領域を使用します。
+
+## リリースの自動ビルド
+
+`vX.Y.Z`タグをpushするとGitHub ActionsがPlatformIOビルド、mergedバイナリ、SHA-256チェックサム、Draft Releaseを作成します。Draft Releaseを公開すると、同じバイナリを組み込んだGitHub PagesとWeb Installerが自動配信されます。
 
 ## テスト
 
 確認手順と実機結果は[`docs/TESTING.md`](docs/TESTING.md)を参照してください。
 
-## 今後の予定
+## プリセット互換
 
-- JSONバックアップ／プリセット互換
-- 対応Chainデバイスの拡大
-
-実装時は、M5ChainOSCおよびChainOSCminiとの設定・プリセット互換性を重視します。
+デバイス単位のプリセットにはChainOSCシリーズ共通の`ChainOSC-device-preset`形式を使用します。同じ種類のデバイスであれば、M5ChainOSC、ChainOSCmini、ChainOSCnanoの間でプリセットを共有できます。
 
 ## ライセンス
 

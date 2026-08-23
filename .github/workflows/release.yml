@@ -1,0 +1,117 @@
+name: Build and draft release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build M5NanoC6 firmware
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      firmware_name: ${{ steps.version.outputs.firmware_name }}
+      checksum_name: ${{ steps.version.outputs.checksum_name }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: .github/requirements-release.txt
+
+      - name: Install PlatformIO
+        run: python -m pip install --requirement .github/requirements-release.txt
+
+      - name: Validate release version
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: >-
+          python scripts/check_release_version.py
+          --tag "$RELEASE_TAG"
+          --check-installer-metadata
+          --github-output "$GITHUB_OUTPUT"
+
+      - name: Build with PlatformIO
+        run: platformio run -e m5nanoc6
+
+      - name: Create merged firmware
+        env:
+          FIRMWARE_NAME: ${{ steps.version.outputs.firmware_name }}
+        run: |
+          mkdir -p dist
+          python "$HOME/.platformio/packages/tool-esptoolpy/esptool.py" \
+            --chip esp32c6 merge_bin \
+            -o "dist/$FIRMWARE_NAME" \
+            --flash_mode dio \
+            --flash_freq 80m \
+            --flash_size 4MB \
+            0x0 .pio/build/m5nanoc6/bootloader.bin \
+            0x8000 .pio/build/m5nanoc6/partitions.bin \
+            0xe000 "$HOME/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin" \
+            0x10000 .pio/build/m5nanoc6/firmware.bin
+
+      - name: Create SHA-256 checksum
+        env:
+          FIRMWARE_NAME: ${{ steps.version.outputs.firmware_name }}
+          CHECKSUM_NAME: ${{ steps.version.outputs.checksum_name }}
+        working-directory: dist
+        run: sha256sum "$FIRMWARE_NAME" > "$CHECKSUM_NAME"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ChainOSCnano-${{ steps.version.outputs.version }}-M5NanoC6
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload release files for draft job
+        if: github.ref_type == 'tag'
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-files
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 1
+
+  draft-release:
+    name: Create draft GitHub Release
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download release files
+        uses: actions/download-artifact@v8
+        with:
+          name: release-files
+          path: dist
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TITLE: ChainOSCnano ${{ github.ref_name }}
+        run: >-
+          gh release create "$RELEASE_TAG"
+          dist/*
+          --repo "$GITHUB_REPOSITORY"
+          --verify-tag
+          --draft
+          --generate-notes
+          --title "$RELEASE_TITLE"

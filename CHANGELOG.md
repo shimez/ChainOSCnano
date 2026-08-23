@@ -6,6 +6,23 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-24
+
+### Added
+
+- Chain Encoder、Chain Angle、Chain ToF、Chain Joystickへの対応
+- 各対応デバイスのWeb UI、OSC送信、UID単位の保存と復元
+- 全体設定のバージョン付きJSONエクスポート／インポート
+- デバイス単位のJSONプリセットのエクスポート／インポート
+- `ChainOSC-device-preset`によるM5ChainOSC／ChainOSCminiとの互換性
+- デバイスカードのメニューと10秒間のオレンジLED識別
+- JSON形式、デバイス種類、入力値、メッセージ数、容量の検証
+
+### Changed
+
+- ChainOSCminiの設定モデル、検証、Web UI、デバイス処理を共通基盤として移植
+- PlatformIOのアプリ領域を`huge_app.csv`へ変更
+
 ## [0.5.0] - 2026-08-24
 
 ### Added
@@ -85,7 +102,8 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 - M5NanoC6内蔵RGB LEDの初期化
 - v0.1.0向けREADME、テスト手順、第三者ライセンス表記
 
-[Unreleased]: https://github.com/shimez/ChainOSCnano/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/shimez/ChainOSCnano/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/shimez/ChainOSCnano/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/shimez/ChainOSCnano/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/shimez/ChainOSCnano/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/shimez/ChainOSCnano/compare/v0.2.0...v0.3.0

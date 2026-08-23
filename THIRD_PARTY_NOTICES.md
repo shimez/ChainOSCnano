@@ -34,6 +34,14 @@ ChainOSCnanoはMIT Licenseで公開していますが、ビルド時に利用す
 
 ArduinoOSCが利用するArxContainer、ArxSmartPtr、ArxTypeTraits、DebugLogもMIT Licenseです。各依存関係とバージョンは`platformio.ini`およびPlatformIOの依存関係解決結果を参照してください。
 
+### ArduinoJson
+
+- Project: ArduinoJson
+- License: MIT License
+- Source: https://github.com/bblanchon/ArduinoJson
+
+全体設定およびデバイスプリセットのJSON解析に使用しています。
+
 ## ビルドツール
 
 PlatformIO、pioarduino platform-espressif32、esptoolおよびコンパイラー等はビルドや書き込みに使用します。これらのツール自体は通常、配布するファームウェアへそのまま組み込まれるものではありません。

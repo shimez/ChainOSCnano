@@ -5,8 +5,11 @@
 #include <string.h>
 
 #include "config.h"
+#include "logging.h"
+#include "angle_settings.h"
+#include "joystick_settings.h"
 #include "osc_manager.h"
-#include "key_settings.h"
+#include "tof_settings.h"
 
 namespace {
 
@@ -16,23 +19,65 @@ struct DeviceSnapshot {
   uint16_t id;
   chain_device_type_t type;
   uint8_t uid[UID_SIZE];
+  bool uidValid;
   uint8_t lastButtonStatus;
   bool buttonInitialized;
   bool keyReadErrorReported;
+  int16_t lastEncoderAbsolute;
+  bool encoderInitialized;
+  bool encoderReadErrorReported;
+  int lastAngleValue;
+  bool angleInitialized;
+  bool angleReadErrorReported;
+  int8_t lastJoystickX;
+  int8_t lastJoystickY;
+  bool joystickInitialized;
+  bool joystickReadErrorReported;
+  int lastTofMm;
+  bool tofInitialized;
+  bool tofConfigured;
+  uint8_t tofReadFailures;
+  unsigned long lastTofConfigMs;
+  unsigned long lastTofPollMs;
+  unsigned long identifyUntilMs;
 };
 
-HardwareSerial chainSerial(1);
-Chain chainBus;
-DeviceSnapshot previousDevices[CHAIN_MAX_DEVICES] = {};
-uint16_t previousCount = 0;
-bool firstScan = true;
-unsigned long lastScanMs = 0;
-unsigned long lastKeyPollMs = 0;
-unsigned long lastBusRecoveryMs = 0;
-uint8_t consecutiveScanFailures = 0;
+struct ChainPortContext {
+  const char* name;
+  HardwareSerial* serial;
+  uint8_t rxPin;
+  uint8_t txPin;
+  uint8_t portMask;
+  Chain bus;
+  DeviceSnapshot devices[CHAIN_MAX_DEVICES];
+  uint16_t deviceCount;
+  bool connected;
+  bool firstScan;
+  unsigned long lastScanMs;
+  unsigned long lastKeyPollMs;
+
+  ChainPortContext(const char* portName, HardwareSerial* hardwareSerial,
+                   uint8_t rx, uint8_t tx, uint8_t mask)
+      : name(portName),
+        serial(hardwareSerial),
+        rxPin(rx),
+        txPin(tx),
+        portMask(mask),
+        devices{},
+        deviceCount(0),
+        connected(false),
+        firstScan(true),
+        lastScanMs(0),
+        lastKeyPollMs(0) {}
+};
+
+ChainPortContext portG1G2("G1_G2", &Serial1, CHAIN_G1_G2_RX_PIN,
+                          CHAIN_G1_G2_TX_PIN, 0x01);
+
 uint8_t colorBlue[] = {0, 0, 255};
 uint8_t colorOrange[] = {255, 64, 0};
-uint8_t colorGreen[] = {0, 255, 64};
+uint8_t colorRed[] = {255, 0, 0};
+uint8_t colorGreen[] = {0, 255, 0};
 
 bool hasStatusLed(chain_device_type_t type) {
   return type == CHAIN_KEY_TYPE_CODE || type == CHAIN_ENCODER_TYPE_CODE ||
@@ -40,7 +85,12 @@ bool hasStatusLed(chain_device_type_t type) {
          type == CHAIN_TOF_TYPE_CODE;
 }
 
-const char* statusName(chain_status_t status) {
+bool identifyActive(const DeviceSnapshot& device, unsigned long now) {
+  return device.identifyUntilMs != 0 &&
+         static_cast<long>(device.identifyUntilMs - now) > 0;
+}
+
+const char* chainStatusName(chain_status_t status) {
   switch (status) {
     case CHAIN_OK: return "OK";
     case CHAIN_PARAMETER_ERROR: return "PARAMETER_ERROR";
@@ -51,140 +101,171 @@ const char* statusName(chain_status_t status) {
   }
 }
 
-const char* typeName(chain_device_type_t type) {
+const char* deviceTypeName(chain_device_type_t type) {
   switch (type) {
     case CHAIN_ENCODER_TYPE_CODE: return "Encoder";
     case CHAIN_ANGLE_TYPE_CODE: return "Angle";
     case CHAIN_KEY_TYPE_CODE: return "Key";
     case CHAIN_JOYSTICK_TYPE_CODE: return "Joystick";
     case CHAIN_TOF_TYPE_CODE: return "ToF";
+    case UNIT_CHAIN_BUS_TYPE_CODE: return "UnitChainBus";
+    case CHAIN_SWITCH_TYPE_CODE: return "Switch";
+    case CHAIN_PIR_TYPE_CODE: return "PIR";
+    case CHAIN_MIC_TYPE_CODE: return "Microphone";
+    case CHAIN_BUZZER_TYPE_CODE: return "Buzzer";
+    case UNIT_8SERVOS2_CHAIN_TYPE_CODE: return "8Servos2";
+    case CHAIN_MONO_TYPE_CODE: return "Mono";
+    case CHAIN_RGB_TYPE_CODE: return "RGB";
+    case CHAIN_UNKNOWN_TYPE_CODE:
     default: return "Unknown";
   }
 }
 
-void printUid(const uint8_t* uid) {
-  for (size_t index = 0; index < UID_SIZE; ++index) {
-    Serial.printf("%02X", uid[index]);
-  }
-}
-
-String uidString(const uint8_t* uid) {
-  static constexpr char HEX_DIGITS[] = "0123456789ABCDEF";
-  String value;
-  value.reserve(UID_SIZE * 2);
-  for (size_t index = 0; index < UID_SIZE; ++index) {
-    value += HEX_DIGITS[(uid[index] >> 4) & 0x0F];
-    value += HEX_DIGITS[uid[index] & 0x0F];
-  }
-  return value;
-}
-
-bool sequenceMode(const DeviceSnapshot& device) {
-  KeySetting* setting = keySettingsFind(uidString(device.uid));
-  return setting && setting->mode == MODE_SEQUENCE;
-}
-
-void drainKeyReports(uint16_t id) {
-  chain_button_press_type_t ignoredType;
-  while (chainBus.getKeyButtonPressStatus(id, &ignoredType)) {
-    // Raw state is authoritative. Drain queued reports because M5Chain stores
-    // each report in a dynamically allocated linked-list node.
-  }
-}
-
-void drainAllKeyReports() {
-  for (uint16_t id = 1; id <= CHAIN_MAX_DEVICES; ++id) {
-    drainKeyReports(id);
-  }
-}
-
-void recordScanSuccess() {
-  consecutiveScanFailures = 0;
-}
-
-void recordScanFailure(const char* reason) {
-  if (consecutiveScanFailures < 255) ++consecutiveScanFailures;
-  const unsigned long now = millis();
-  if (consecutiveScanFailures < CHAIN_BUS_RECOVERY_FAILURES ||
-      now - lastBusRecoveryMs < CHAIN_BUS_RECOVERY_INTERVAL_MS) {
+void printUid(const DeviceSnapshot& device) {
+  if (!device.uidValid) {
+    NANO_VERBOSE_PRINT("unavailable");
     return;
   }
-
-  drainAllKeyReports();
-  chainSerial.end();
-  delay(2);
-  chainBus.begin(&chainSerial, CHAIN_BAUD, CHAIN_RX_PIN, CHAIN_TX_PIN);
-  lastBusRecoveryMs = millis();
-  lastKeyPollMs = lastBusRecoveryMs;
-  consecutiveScanFailures = 0;
-  Serial.printf(
-      "[ChainOSCnano][CHAIN] bus_reinitialized reason=%s RX=%u TX=%u\n",
-      reason, CHAIN_RX_PIN, CHAIN_TX_PIN);
+  for (size_t index = 0; index < UID_SIZE; ++index) {
+    NANO_VERBOSE_LOGF("%02X", device.uid[index]);
+  }
 }
 
-bool setDeviceLed(DeviceSnapshot& device, uint8_t* color,
-                  const char* colorName) {
-  uint8_t operationStatus = 0;
-  const chain_status_t status = chainBus.setRGBValue(
-      device.id, 0, 1, color, 3, &operationStatus, 100);
-  if (status == CHAIN_OK && operationStatus != 0) return true;
-  Serial.printf(
-      "[ChainOSCnano][CHAIN_KEY] led_error id=%u color=%s "
-      "status=%d(%s) operation=%u\n",
-      device.id, colorName, static_cast<int>(status), statusName(status),
-      operationStatus);
-  return false;
+bool sameDevice(const DeviceSnapshot& left, const DeviceSnapshot& right) {
+  if (left.id != right.id || left.type != right.type ||
+      left.uidValid != right.uidValid) {
+    return false;
+  }
+  return !left.uidValid || memcmp(left.uid, right.uid, UID_SIZE) == 0;
 }
 
-bool deviceIdentityMatches(const DeviceSnapshot& device) {
-  uint8_t currentUid[UID_SIZE] = {};
-  uint8_t operationStatus = 0;
-  const chain_status_t status = chainBus.getUID(
-      device.id, UID_TYPE_12_BYTE, currentUid, UID_SIZE, &operationStatus, 50);
-  if (status == CHAIN_OK && operationStatus != 0 &&
-      memcmp(currentUid, device.uid, UID_SIZE) == 0) {
+bool snapshotChanged(const ChainPortContext& port,
+                     const DeviceSnapshot* devices, uint16_t count) {
+  if (!port.connected || count != port.deviceCount) {
     return true;
   }
-
-  Serial.printf(
-      "[ChainOSCnano][CHAIN_KEY] identity_check_failed id=%u "
-      "status=%d(%s) operation=%u expected_uid=",
-      device.id, static_cast<int>(status), statusName(status), operationStatus);
-  printUid(device.uid);
-  Serial.print(" current_uid=");
-  if (status == CHAIN_OK && operationStatus != 0) {
-    printUid(currentUid);
-  } else {
-    Serial.print("unavailable");
+  for (uint16_t index = 0; index < count; ++index) {
+    if (!sameDevice(devices[index], port.devices[index])) {
+      return true;
+    }
   }
-  Serial.println(" event_discarded=true");
   return false;
 }
 
-void initializeDeviceLed(DeviceSnapshot& device) {
-  uint8_t operationStatus = 0;
-  const chain_status_t status = chainBus.setRGBLight(
-      device.id, CHAIN_DEVICE_LED_BRIGHTNESS, &operationStatus,
-      CHAIN_SAVE_FLASH_DISABLE, 100);
-  if (status != CHAIN_OK || operationStatus == 0) {
-    Serial.printf(
-        "[ChainOSCnano][CHAIN] brightness_error id=%u status=%d(%s) "
-        "operation=%u\n",
-        device.id, static_cast<int>(status), statusName(status),
-        operationStatus);
+void saveSnapshot(ChainPortContext& port, const DeviceSnapshot* devices,
+                  uint16_t count) {
+  port.deviceCount = count;
+  for (uint16_t index = 0; index < count; ++index) {
+    port.devices[index] = devices[index];
   }
-  setDeviceLed(device, colorBlue, "BLUE");
 }
 
-void initializeKey(DeviceSnapshot& device) {
+void printSnapshot(const ChainPortContext& port,
+                   const DeviceSnapshot* devices, uint16_t count) {
+  NANO_VERBOSE_LOGF("[ChainOSCnano][CHAIN][%s] devices=%u\n", port.name, count);
+  for (uint16_t index = 0; index < count; ++index) {
+    NANO_VERBOSE_LOGF(
+        "[ChainOSCnano][CHAIN][%s] index=%u id=%u type=%u(%s) uid=",
+        port.name, index, devices[index].id,
+        static_cast<unsigned int>(devices[index].type),
+        deviceTypeName(devices[index].type));
+    printUid(devices[index]);
+    NANO_VERBOSE_PRINTLN();
+  }
+}
+
+void drainKeyReports(ChainPortContext& port, uint16_t id) {
+  chain_button_press_type_t ignoredType;
+  while (port.bus.getKeyButtonPressStatus(id, &ignoredType)) {
+    // Raw pressed/released state is used. Active reports are drained because
+    // M5Chain stores each one in a dynamically allocated linked-list node.
+  }
+}
+
+void drainAllKeyReports(ChainPortContext& port) {
+  for (uint16_t id = 1; id <= CHAIN_MAX_DEVICES; ++id) {
+    drainKeyReports(port, id);
+  }
+}
+
+bool setKeyLed(ChainPortContext& port, DeviceSnapshot& device,
+               uint8_t* color, const char* colorName) {
+  if (identifyActive(device, millis())) return true;
+  uint8_t operationStatus = 0;
+  const chain_status_t status = port.bus.setRGBValue(
+      device.id, 0, 1, color, 3, &operationStatus, 100);
+  if (status == CHAIN_OK && operationStatus != 0) {
+    return true;
+  }
+  NANO_VERBOSE_LOGF(
+      "[ChainOSCnano][CHAIN_KEY][%s] led_error id=%u color=%s "
+      "status=%d(%s) operation=%u\n",
+      port.name, device.id, colorName, static_cast<int>(status),
+      chainStatusName(status), operationStatus);
+  return false;
+}
+
+bool setDeviceLed(ChainPortContext& port, DeviceSnapshot& device,
+                  uint8_t* color, const char* colorName) {
+  return setKeyLed(port, device, color, colorName);
+}
+
+void updateIdentifyLeds(ChainPortContext& port) {
+  const unsigned long now = millis();
+  for (uint16_t index = 0; index < port.deviceCount; ++index) {
+    DeviceSnapshot& device = port.devices[index];
+    if (device.identifyUntilMs == 0 || identifyActive(device, now)) continue;
+    device.identifyUntilMs = 0;
+    setDeviceLed(port, device, colorBlue, "BLUE");
+  }
+}
+
+bool identifyOnPort(ChainPortContext& port, const String& identity) {
+  if (!identity.startsWith("chain:")) return false;
+  const String requestedUid = identity.substring(6);
+  for (uint16_t index = 0; index < port.deviceCount; ++index) {
+    DeviceSnapshot& device = port.devices[index];
+    if (!device.uidValid || !hasStatusLed(device.type)) continue;
+    String uid;
+    uid.reserve(UID_SIZE * 2);
+    for (size_t byteIndex = 0; byteIndex < UID_SIZE; ++byteIndex) {
+      char byteText[3];
+      snprintf(byteText, sizeof(byteText), "%02X", device.uid[byteIndex]);
+      uid += byteText;
+    }
+    if (uid != requestedUid) continue;
+    uint8_t operationStatus = 0;
+    port.bus.setRGBLight(device.id, CHAIN_KEY_LED_BRIGHTNESS,
+                         &operationStatus, CHAIN_SAVE_FLASH_DISABLE, 100);
+    if (!setDeviceLed(port, device, colorOrange, "ORANGE")) return false;
+    device.identifyUntilMs = millis() + 10000UL;
+    return true;
+  }
+  return false;
+}
+
+void initializeKey(ChainPortContext& port, DeviceSnapshot& device) {
+  uint8_t operationStatus = 0;
+  const chain_status_t brightnessStatus = port.bus.setRGBLight(
+      device.id, CHAIN_KEY_LED_BRIGHTNESS, &operationStatus,
+      CHAIN_SAVE_FLASH_DISABLE, 100);
+  if (brightnessStatus != CHAIN_OK || operationStatus == 0) {
+    NANO_VERBOSE_LOGF(
+        "[ChainOSCnano][CHAIN_KEY][%s] brightness_error id=%u "
+        "status=%d(%s) operation=%u\n",
+        port.name, device.id, static_cast<int>(brightnessStatus),
+        chainStatusName(brightnessStatus), operationStatus);
+  }
+
   uint8_t rawStatus = 0;
   const chain_status_t status =
-      chainBus.getKeyButtonStatus(device.id, &rawStatus, 100);
-  drainKeyReports(device.id);
+      port.bus.getKeyButtonStatus(device.id, &rawStatus, 100);
+  drainKeyReports(port, device.id);
   if (status != CHAIN_OK) {
-    Serial.printf(
-        "[ChainOSCnano][CHAIN_KEY] init_error id=%u status=%d(%s)\n",
-        device.id, static_cast<int>(status), statusName(status));
+    NANO_VERBOSE_LOGF(
+        "[ChainOSCnano][CHAIN_KEY][%s] init_error id=%u status=%d(%s)\n",
+        port.name, device.id, static_cast<int>(status),
+        chainStatusName(status));
     device.buttonInitialized = false;
     return;
   }
@@ -192,52 +273,122 @@ void initializeKey(DeviceSnapshot& device) {
   device.lastButtonStatus = rawStatus != 0 ? 1 : 0;
   device.buttonInitialized = true;
   device.keyReadErrorReported = false;
-  const bool sequence = sequenceMode(device);
-  const bool ledUpdated = setDeviceLed(
-      device, device.lastButtonStatus != 0
-                  ? (sequence ? colorGreen : colorOrange)
-                  : colorBlue,
-      device.lastButtonStatus != 0
-          ? (sequence ? "GREEN" : "ORANGE")
-          : "BLUE");
-  if (!ledUpdated) device.buttonInitialized = false;
+  setKeyLed(port, device,
+            device.lastButtonStatus != 0 ? colorOrange : colorBlue,
+            device.lastButtonStatus != 0 ? "ORANGE" : "BLUE");
 
-  Serial.printf("[ChainOSCnano][CHAIN_KEY] ready id=%u uid=", device.id);
-  printUid(device.uid);
-  Serial.printf(
-      " initial=%s led=%s\n",
-      device.lastButtonStatus != 0 ? "PRESSED" : "RELEASED",
-      ledUpdated ? (device.lastButtonStatus != 0
-                         ? (sequence ? "GREEN" : "ORANGE")
-                         : "BLUE")
-                 : "ERROR");
+  NANO_VERBOSE_LOGF("[ChainOSCnano][CHAIN_KEY][%s] ready id=%u uid=", port.name,
+                device.id);
+  printUid(device);
+  NANO_VERBOSE_LOGF(" initial=%s led=%s\n",
+                device.lastButtonStatus != 0 ? "PRESSED" : "RELEASED",
+                device.lastButtonStatus != 0 ? "ORANGE" : "BLUE");
 }
 
-void initializeDevices() {
-  for (uint16_t index = 0; index < previousCount; ++index) {
-    if (hasStatusLed(previousDevices[index].type)) {
-      initializeDeviceLed(previousDevices[index]);
-    }
-    if (previousDevices[index].type == CHAIN_KEY_TYPE_CODE) {
-      initializeKey(previousDevices[index]);
+void initializeKeys(ChainPortContext& port) {
+  for (uint16_t index = 0; index < port.deviceCount; ++index) {
+    if (port.devices[index].type == CHAIN_KEY_TYPE_CODE) {
+      initializeKey(port, port.devices[index]);
     }
   }
 }
 
-bool pollKeys() {
-  for (uint16_t index = 0; index < previousCount; ++index) {
-    DeviceSnapshot& device = previousDevices[index];
-    if (device.type != CHAIN_KEY_TYPE_CODE) continue;
+void initializeEncoder(ChainPortContext& port, DeviceSnapshot& device) {
+  uint8_t operationStatus = 0;
+  port.bus.setRGBLight(device.id, CHAIN_KEY_LED_BRIGHTNESS, &operationStatus,
+                       CHAIN_SAVE_FLASH_DISABLE, 100);
+  int16_t absoluteValue = 0;
+  uint8_t buttonStatus = 0;
+  const chain_status_t valueResult =
+      port.bus.getEncoderValue(device.id, &absoluteValue);
+  const chain_status_t buttonResult =
+      port.bus.getEncoderButtonStatus(device.id, &buttonStatus);
+  if (valueResult != CHAIN_OK || buttonResult != CHAIN_OK) {
+    NANO_VERBOSE_LOGF("[ChainOSCnano][CHAIN_ENCODER][%s] init_error id=%u value=%s button=%s\n",
+                  port.name, device.id, chainStatusName(valueResult),
+                  chainStatusName(buttonResult));
+    return;
+  }
+  device.lastEncoderAbsolute = absoluteValue;
+  device.encoderInitialized = true;
+  device.lastButtonStatus = buttonStatus != 0 ? 1 : 0;
+  device.buttonInitialized = true;
+  device.encoderReadErrorReported = false;
+  setDeviceLed(port, device, colorBlue, "BLUE");
+  NANO_VERBOSE_LOGF("[ChainOSCnano][CHAIN_ENCODER][%s] ready id=%u value=%d uid=",
+                port.name, device.id, static_cast<int>(absoluteValue));
+  printUid(device);
+  NANO_VERBOSE_PRINTLN();
+}
+
+void initializeEncoders(ChainPortContext& port) {
+  for (uint16_t index = 0; index < port.deviceCount; ++index)
+    if (port.devices[index].type == CHAIN_ENCODER_TYPE_CODE)
+      initializeEncoder(port, port.devices[index]);
+}
+
+void initializeAngles(ChainPortContext& port) {
+  for (uint16_t index = 0; index < port.deviceCount; ++index) {
+    DeviceSnapshot& device = port.devices[index];
+    if (device.type != CHAIN_ANGLE_TYPE_CODE) continue;
+    device.angleInitialized = false;
+    device.angleReadErrorReported = false;
+    setDeviceLed(port, device, colorBlue, "BLUE");
+    NANO_VERBOSE_LOGF("[ChainOSCnano][CHAIN_ANGLE][%s] ready id=%u uid=",
+                  port.name, device.id);
+    printUid(device);
+    NANO_VERBOSE_PRINTLN();
+  }
+}
+
+void initializeTofs(ChainPortContext& port) {
+  for (uint16_t index = 0; index < port.deviceCount; ++index) {
+    DeviceSnapshot& device = port.devices[index];
+    if (device.type != CHAIN_TOF_TYPE_CODE) continue;
+    device.lastTofMm = -1; device.tofInitialized = false;
+    device.tofConfigured = false; device.tofReadFailures = 0;
+    device.lastTofConfigMs = 0; device.lastTofPollMs = 0;
+    setDeviceLed(port, device, colorBlue, "BLUE");
+  }
+}
+
+void initializeJoysticks(ChainPortContext& port) {
+  for (uint16_t index = 0; index < port.deviceCount; ++index) {
+    DeviceSnapshot& device = port.devices[index];
+    if (device.type != CHAIN_JOYSTICK_TYPE_CODE) continue;
+    device.joystickInitialized = false;
+    device.joystickReadErrorReported = false;
+    device.buttonInitialized = false;
+    setDeviceLed(port, device, colorBlue, "BLUE");
+    NANO_VERBOSE_LOGF("[ChainOSCnano][CHAIN_JOYSTICK][%s] ready id=%u uid=",
+                  port.name, device.id);
+    printUid(device);
+    NANO_VERBOSE_PRINTLN();
+  }
+}
+
+void pollKeys(ChainPortContext& port) {
+  if (!port.connected) {
+    return;
+  }
+
+  for (uint16_t index = 0; index < port.deviceCount; ++index) {
+    DeviceSnapshot& device = port.devices[index];
+    if (device.type != CHAIN_KEY_TYPE_CODE) {
+      continue;
+    }
 
     uint8_t rawStatus = 0;
     const chain_status_t status =
-        chainBus.getKeyButtonStatus(device.id, &rawStatus, 50);
-    drainKeyReports(device.id);
+        port.bus.getKeyButtonStatus(device.id, &rawStatus, 50);
+    drainKeyReports(port, device.id);
     if (status != CHAIN_OK) {
       if (!device.keyReadErrorReported) {
-        Serial.printf(
-            "[ChainOSCnano][CHAIN_KEY] read_error id=%u status=%d(%s)\n",
-            device.id, static_cast<int>(status), statusName(status));
+        NANO_VERBOSE_LOGF(
+            "[ChainOSCnano][CHAIN_KEY][%s] read_error id=%u "
+            "status=%d(%s)\n",
+            port.name, device.id, static_cast<int>(status),
+            chainStatusName(status));
         device.keyReadErrorReported = true;
       }
       continue;
@@ -248,194 +399,369 @@ bool pollKeys() {
     if (!device.buttonInitialized) {
       device.lastButtonStatus = buttonStatus;
       device.buttonInitialized = true;
-      const bool sequence = sequenceMode(device);
-      if (!deviceIdentityMatches(device) ||
-          !setDeviceLed(device,
-                        buttonStatus != 0
-                            ? (sequence ? colorGreen : colorOrange)
-                            : colorBlue,
-                        buttonStatus != 0
-                            ? (sequence ? "GREEN" : "ORANGE")
-                            : "BLUE")) {
-        device.buttonInitialized = false;
-        return true;
-      }
+      setKeyLed(port, device, buttonStatus != 0 ? colorOrange : colorBlue,
+                buttonStatus != 0 ? "ORANGE" : "BLUE");
       continue;
     }
-    if (buttonStatus == device.lastButtonStatus) continue;
-
-    const bool pressed = buttonStatus != 0;
-    if (!deviceIdentityMatches(device)) return true;
-    const bool sequence = sequenceMode(device);
-    if (!setDeviceLed(device,
-                      pressed ? (sequence ? colorGreen : colorOrange)
-                              : colorBlue,
-                      pressed ? (sequence ? "GREEN" : "ORANGE") : "BLUE")) {
-      Serial.printf(
-          "[ChainOSCnano][CHAIN_KEY] event_discarded id=%u "
-          "reason=led_update_failed\n",
-          device.id);
-      return true;
+    if (buttonStatus == device.lastButtonStatus) {
+      continue;
     }
 
     device.lastButtonStatus = buttonStatus;
-    Serial.printf("[ChainOSCnano][CHAIN_KEY] id=%u uid=", device.id);
-    printUid(device.uid);
-    Serial.printf(" state=%s led=%s\n", pressed ? "PRESSED" : "RELEASED",
-                  pressed ? (sequence ? "GREEN" : "ORANGE") : "BLUE");
-    oscSendKeyEvent(device.uid, UID_SIZE, pressed);
-  }
-  return false;
-}
-
-bool sameSnapshot(const DeviceSnapshot* devices, uint16_t count) {
-  if (count != previousCount) return false;
-  for (uint16_t index = 0; index < count; ++index) {
-    if (devices[index].id != previousDevices[index].id ||
-        devices[index].type != previousDevices[index].type ||
-        memcmp(devices[index].uid, previousDevices[index].uid, UID_SIZE) != 0) {
-      return false;
+    const bool pressed = buttonStatus != 0;
+    setKeyLed(port, device, pressed ? colorOrange : colorBlue,
+              pressed ? "ORANGE" : "BLUE");
+    NANO_VERBOSE_LOGF("[ChainOSCnano][CHAIN_KEY][%s] id=%u uid=", port.name,
+                  device.id);
+    printUid(device);
+    NANO_VERBOSE_LOGF(" state=%s led=%s\n", pressed ? "PRESSED" : "RELEASED",
+                  pressed ? "ORANGE" : "BLUE");
+    if (device.uidValid) {
+      oscSendChainKey(device.uid, UID_SIZE, pressed);
     }
   }
-  return true;
 }
 
-void saveSnapshot(const DeviceSnapshot* devices, uint16_t count) {
-  previousCount = count;
-  for (uint16_t index = 0; index < count; ++index) {
-    previousDevices[index] = devices[index];
+void pollEncoders(ChainPortContext& port) {
+  if (!port.connected) return;
+  for (uint16_t index = 0; index < port.deviceCount; ++index) {
+    DeviceSnapshot& device = port.devices[index];
+    if (device.type != CHAIN_ENCODER_TYPE_CODE || !device.uidValid) continue;
+
+    int16_t absoluteValue = 0;
+    uint8_t rawButton = 0;
+    const chain_status_t valueResult =
+        port.bus.getEncoderValue(device.id, &absoluteValue);
+    const chain_status_t buttonResult =
+        port.bus.getEncoderButtonStatus(device.id, &rawButton);
+    if (valueResult != CHAIN_OK || buttonResult != CHAIN_OK) {
+      if (!device.encoderReadErrorReported) {
+        NANO_VERBOSE_LOGF("[ChainOSCnano][CHAIN_ENCODER][%s] read_error id=%u value=%s button=%s\n",
+                      port.name, device.id, chainStatusName(valueResult),
+                      chainStatusName(buttonResult));
+        device.encoderReadErrorReported = true;
+      }
+      continue;
+    }
+    device.encoderReadErrorReported = false;
+    if (!device.encoderInitialized) {
+      device.lastEncoderAbsolute = absoluteValue;
+      device.encoderInitialized = true;
+    } else if (absoluteValue != device.lastEncoderAbsolute) {
+      const int16_t delta = absoluteValue - device.lastEncoderAbsolute;
+      device.lastEncoderAbsolute = absoluteValue;
+      oscSendChainEncoderRotation(device.uid, UID_SIZE, absoluteValue, delta);
+    }
+
+    const uint8_t buttonStatus = rawButton != 0 ? 1 : 0;
+    if (!device.buttonInitialized) {
+      device.lastButtonStatus = buttonStatus;
+      device.buttonInitialized = true;
+    } else if (buttonStatus != device.lastButtonStatus) {
+      device.lastButtonStatus = buttonStatus;
+      const bool pressed = buttonStatus != 0;
+      const bool sequenceMode =
+          oscSendChainEncoderClick(device.uid, UID_SIZE, pressed);
+      setDeviceLed(port, device,
+                   pressed ? (sequenceMode ? colorGreen : colorRed) : colorBlue,
+                   pressed ? (sequenceMode ? "GREEN" : "RED") : "BLUE");
+      NANO_VERBOSE_LOGF("[ChainOSCnano][CHAIN_ENCODER][%s] id=%u click=%s\n",
+                    port.name, device.id,
+                    pressed ? "PRESSED" : "RELEASED");
+    }
   }
 }
 
-void scanBus() {
-  const bool connected = chainBus.isDeviceConnected(1, 20);
+void pollAngles(ChainPortContext& port) {
+  if (!port.connected) return;
+  for (uint16_t index = 0; index < port.deviceCount; ++index) {
+    DeviceSnapshot& device = port.devices[index];
+    if (device.type != CHAIN_ANGLE_TYPE_CODE || !device.uidValid) continue;
+    String uid;
+    uid.reserve(UID_SIZE * 2);
+    for (size_t i = 0; i < UID_SIZE; ++i) {
+      char byteText[3];
+      snprintf(byteText, sizeof(byteText), "%02X", device.uid[i]);
+      uid += byteText;
+    }
+    AngleSetting* setting = angleSettingsEnsure(
+        String("chain:") + uid, String("Chain Angle ") + uid);
+    if (!setting) continue;
+    int value = -1;
+    chain_status_t result = CHAIN_PARAMETER_ERROR;
+    if (setting->use12Bit) {
+      uint16_t raw = 0;
+      result = port.bus.getAngle12BitAdc(device.id, &raw);
+      if (result == CHAIN_OK) value = static_cast<int>(raw);
+    } else {
+      uint8_t raw = 0;
+      result = port.bus.getAngle8BitAdc(device.id, &raw);
+      if (result == CHAIN_OK) value = static_cast<int>(raw);
+    }
+    if (result != CHAIN_OK || value < 0) {
+      if (!device.angleReadErrorReported) {
+        NANO_VERBOSE_LOGF("[ChainOSCnano][CHAIN_ANGLE][%s] read_error id=%u status=%s\n",
+                      port.name, device.id, chainStatusName(result));
+        device.angleReadErrorReported = true;
+      }
+      continue;
+    }
+    device.angleReadErrorReported = false;
+    if (!device.angleInitialized) {
+      device.lastAngleValue = value;
+      device.angleInitialized = true;
+      continue;
+    }
+    if (abs(value - device.lastAngleValue) >= max(1, setting->deadband)) {
+      device.lastAngleValue = value;
+      oscSendChainAngle(device.uid, UID_SIZE, value);
+    }
+  }
+}
+
+void pollJoysticks(ChainPortContext& port) {
+  if (!port.connected) return;
+  for (uint16_t index = 0; index < port.deviceCount; ++index) {
+    DeviceSnapshot& device = port.devices[index];
+    if (device.type != CHAIN_JOYSTICK_TYPE_CODE || !device.uidValid) continue;
+    int8_t x = 0, y = 0; uint8_t rawButton = 0;
+    const chain_status_t axesResult = port.bus.getJoystickMappedInt8Value(device.id, &x, &y);
+    const chain_status_t buttonResult = port.bus.getJoystickButtonStatus(device.id, &rawButton);
+    if (axesResult != CHAIN_OK || buttonResult != CHAIN_OK) {
+      if (!device.joystickReadErrorReported) NANO_VERBOSE_LOGF("[ChainOSCnano][CHAIN_JOYSTICK][%s] read_error id=%u axes=%s button=%s\n", port.name, device.id, chainStatusName(axesResult), chainStatusName(buttonResult));
+      device.joystickReadErrorReported = true; continue;
+    }
+    device.joystickReadErrorReported = false;
+    String uid; for(size_t i=0;i<UID_SIZE;++i){char b[3];snprintf(b,sizeof(b),"%02X",device.uid[i]);uid+=b;}
+    JoystickSetting* setting = joystickSettingsEnsure(String("chain:")+uid, String("Chain Joystick ")+uid);
+    if (!setting) continue;
+    if (!device.joystickInitialized) { device.lastJoystickX=x; device.lastJoystickY=y; device.joystickInitialized=true; }
+    else {
+      const bool cx=abs((int)x-(int)device.lastJoystickX)>=max(1,setting->deadband);
+      const bool cy=abs((int)y-(int)device.lastJoystickY)>=max(1,setting->deadband);
+      if(cx||cy){device.lastJoystickX=x;device.lastJoystickY=y;oscSendChainJoystickAxes(device.uid,UID_SIZE,x,y,port.portMask,cx,cy);}
+    }
+    const uint8_t button=rawButton?1:0;
+    if(!device.buttonInitialized){device.lastButtonStatus=button;device.buttonInitialized=true;}
+    else if(button!=device.lastButtonStatus){device.lastButtonStatus=button;const bool pressed=button!=0;const bool seq=oscSendChainJoystickClick(device.uid,UID_SIZE,pressed);setDeviceLed(port,device,pressed?(seq?colorGreen:colorRed):colorBlue,pressed?(seq?"GREEN":"RED"):"BLUE");}
+  }
+}
+
+void pollTofs(ChainPortContext& port) {
+  if (!port.connected) return;
+  const unsigned long now = millis();
+  for (uint16_t index = 0; index < port.deviceCount; ++index) {
+    DeviceSnapshot& device = port.devices[index];
+    if (device.type != CHAIN_TOF_TYPE_CODE || !device.uidValid) continue;
+    String uid;
+    for (size_t i = 0; i < UID_SIZE; ++i) { char b[3]; snprintf(b, sizeof(b), "%02X", device.uid[i]); uid += b; }
+    TofSetting* setting = tofSettingsEnsure(String("chain:") + uid,
+                                             String("Chain ToF ") + uid);
+    if (!setting) continue;
+    if (!device.tofConfigured) {
+      if (device.lastTofConfigMs && now - device.lastTofConfigMs < 2000) continue;
+      device.lastTofConfigMs = now; uint8_t status = 0;
+      chain_status_t result = port.bus.setToFMeasureMode(
+          device.id, CHAIN_TOF_MODE_CONTINUOUS, &status);
+      if (result != CHAIN_OK || status == 0) continue;
+      status = 0; result = port.bus.setToFMeasureTime(device.id, 50, &status);
+      if (result != CHAIN_OK || status == 0) continue;
+      device.tofConfigured = true; device.tofInitialized = false;
+    }
+    if (device.lastTofPollMs && now - device.lastTofPollMs < 50) continue;
+    device.lastTofPollMs = now; uint16_t mm = 0;
+    if (port.bus.getToFDistance(device.id, &mm, 30) != CHAIN_OK) {
+      if (++device.tofReadFailures >= 5) {
+        device.tofReadFailures = 0; device.tofConfigured = false;
+        device.tofInitialized = false;
+      }
+      continue;
+    }
+    device.tofReadFailures = 0;
+    if (mm < 30 || mm >= setting->maxDistanceMm) {
+      device.tofInitialized = false; device.lastTofMm = -1; continue;
+    }
+    const int value = static_cast<int>(mm);
+    if (!device.tofInitialized) device.tofInitialized = true;
+    else if (abs(value - device.lastTofMm) < max(1, setting->deadband)) continue;
+    device.lastTofMm = value;
+    oscSendChainTof(device.uid, UID_SIZE, value);
+  }
+}
+
+void scanChainPort(ChainPortContext& port) {
+  const bool connected = port.bus.isDeviceConnected(1, 20);
   if (!connected) {
-    if (firstScan || previousCount != 0) {
-      Serial.println("[ChainOSCnano][CHAIN] state=DISCONNECTED devices=0");
+    oscBeginChainPortUpdate(port.portMask);
+    if (port.connected || port.firstScan) {
+      NANO_VERBOSE_LOGF(
+          "[ChainOSCnano][CHAIN][%s] state=DISCONNECTED devices=0\n",
+          port.name);
     }
-    drainAllKeyReports();
-    previousCount = 0;
-    firstScan = false;
-    recordScanFailure("disconnected");
+    port.connected = false;
+    port.deviceCount = 0;
+    drainAllKeyReports(port);
+    port.firstScan = false;
     return;
   }
 
   uint16_t reportedCount = 0;
-  const chain_status_t countStatus = chainBus.getDeviceNum(&reportedCount, 150);
+  const chain_status_t countStatus =
+      port.bus.getDeviceNum(&reportedCount, 150);
   if (countStatus != CHAIN_OK) {
-    Serial.printf("[ChainOSCnano][CHAIN] scan_error=get_count status=%d(%s)\n",
-                  static_cast<int>(countStatus), statusName(countStatus));
-    recordScanFailure("get_count");
+    NANO_VERBOSE_LOGF(
+        "[ChainOSCnano][CHAIN][%s] scan_error=get_count status=%d(%s) "
+        "previous_state_retained=true\n",
+        port.name, static_cast<int>(countStatus),
+        chainStatusName(countStatus));
     return;
   }
+
   if (reportedCount > CHAIN_MAX_DEVICES) {
-    Serial.printf("[ChainOSCnano][CHAIN] scan_error=too_many reported=%u max=%u\n",
-                  reportedCount, CHAIN_MAX_DEVICES);
+    NANO_VERBOSE_LOGF(
+        "[ChainOSCnano][CHAIN][%s] scan_error=too_many reported=%u max=%u\n",
+        port.name, reportedCount, CHAIN_MAX_DEVICES);
     return;
   }
 
   device_info_t deviceInfo[CHAIN_MAX_DEVICES] = {};
   device_list_t list = {reportedCount, deviceInfo};
-  if (reportedCount > 0 && !chainBus.getDeviceList(&list, 150)) {
-    Serial.println("[ChainOSCnano][CHAIN] scan_error=get_list");
-    recordScanFailure("get_list");
+  if (reportedCount > 0 && !port.bus.getDeviceList(&list, 150)) {
+    NANO_VERBOSE_LOGF("[ChainOSCnano][CHAIN][%s] scan_error=get_list\n",
+                  port.name);
     return;
   }
 
-  DeviceSnapshot current[CHAIN_MAX_DEVICES] = {};
+  DeviceSnapshot currentDevices[CHAIN_MAX_DEVICES] = {};
+  bool uidError = false;
   for (uint16_t index = 0; index < reportedCount; ++index) {
-    current[index].id = deviceInfo[index].id;
-    current[index].type = deviceInfo[index].device_type;
+    currentDevices[index].id = deviceInfo[index].id;
+    currentDevices[index].type = deviceInfo[index].device_type;
+
     uint8_t operationStatus = 0;
-    const chain_status_t uidStatus = chainBus.getUID(
-        current[index].id, UID_TYPE_12_BYTE, current[index].uid, UID_SIZE,
-        &operationStatus, 150);
-    if (uidStatus != CHAIN_OK || operationStatus == 0) {
-      Serial.printf(
-          "[ChainOSCnano][CHAIN] scan_error=get_uid id=%u status=%d(%s) operation=%u\n",
-          current[index].id, static_cast<int>(uidStatus), statusName(uidStatus),
-          operationStatus);
-      recordScanFailure("get_uid");
-      return;
+    const chain_status_t uidStatus = port.bus.getUID(
+        currentDevices[index].id, UID_TYPE_12_BYTE,
+        currentDevices[index].uid, UID_SIZE, &operationStatus, 150);
+    currentDevices[index].uidValid =
+        uidStatus == CHAIN_OK && operationStatus != 0;
+    if (!currentDevices[index].uidValid) {
+      NANO_VERBOSE_LOGF(
+          "[ChainOSCnano][CHAIN][%s] scan_error=get_uid id=%u "
+          "status=%d(%s) operation=%u previous_state_retained=true\n",
+          port.name, currentDevices[index].id, static_cast<int>(uidStatus),
+          chainStatusName(uidStatus), operationStatus);
+      uidError = true;
+    }
+  }
+  if (uidError) {
+    return;
+  }
+
+  oscBeginChainPortUpdate(port.portMask);
+  for (uint16_t index = 0; index < reportedCount; ++index) {
+    if (currentDevices[index].type == CHAIN_KEY_TYPE_CODE &&
+        currentDevices[index].uidValid) {
+      oscRegisterChainKey(currentDevices[index].uid, UID_SIZE,
+                          port.portMask);
+    } else if (currentDevices[index].type == CHAIN_ENCODER_TYPE_CODE &&
+               currentDevices[index].uidValid) {
+      oscRegisterChainEncoder(currentDevices[index].uid, UID_SIZE,
+                              port.portMask);
+    } else if (currentDevices[index].type == CHAIN_ANGLE_TYPE_CODE &&
+               currentDevices[index].uidValid) {
+      oscRegisterChainAngle(currentDevices[index].uid, UID_SIZE,
+                            port.portMask);
+    } else if (currentDevices[index].type == CHAIN_TOF_TYPE_CODE &&
+               currentDevices[index].uidValid) {
+      oscRegisterChainTof(currentDevices[index].uid, UID_SIZE, port.portMask);
+    } else if (currentDevices[index].type == CHAIN_JOYSTICK_TYPE_CODE &&
+               currentDevices[index].uidValid) {
+      oscRegisterChainJoystick(currentDevices[index].uid, UID_SIZE, port.portMask);
     }
   }
 
-  if (!sameSnapshot(current, reportedCount)) {
-    Serial.printf("[ChainOSCnano][CHAIN] state=%s devices=%u\n",
-                  previousCount == 0 ? "CONNECTED" : "CHANGED", reportedCount);
-    for (uint16_t index = 0; index < reportedCount; ++index) {
-      Serial.printf("[ChainOSCnano][CHAIN] index=%u id=%u type=%u(%s) uid=",
-                    index, current[index].id,
-                    static_cast<unsigned int>(current[index].type),
-                    typeName(current[index].type));
-      printUid(current[index].uid);
-      Serial.println();
-    }
-    saveSnapshot(current, reportedCount);
-    for (uint16_t index = 0; index < previousCount; ++index) {
-      if (previousDevices[index].type == CHAIN_KEY_TYPE_CODE) {
-        keySettingsEnsure(uidString(previousDevices[index].uid));
-      }
-    }
-    initializeDevices();
+  const bool changed = snapshotChanged(port, currentDevices, reportedCount);
+  if (changed) {
+    NANO_VERBOSE_LOGF("[ChainOSCnano][CHAIN][%s] state=%s\n", port.name,
+                  port.connected ? "CHANGED" : "CONNECTED");
+    printSnapshot(port, currentDevices, reportedCount);
+    drainAllKeyReports(port);
+    saveSnapshot(port, currentDevices, reportedCount);
+    port.connected = true;
+    initializeKeys(port);
+    initializeEncoders(port);
+    initializeAngles(port);
+    initializeTofs(port);
+    initializeJoysticks(port);
   }
-  recordScanSuccess();
-  firstScan = false;
+  port.connected = true;
+  port.firstScan = false;
+}
+
+void setupPort(ChainPortContext& port) {
+  port.bus.begin(port.serial, CHAIN_BAUD, port.rxPin, port.txPin);
+  NANO_VERBOSE_LOGF(
+      "[ChainOSCnano][CHAIN][%s] RX=%u TX=%u baud=%lu enabled=true\n",
+      port.name, port.rxPin, port.txPin,
+      static_cast<unsigned long>(CHAIN_BAUD));
+  port.lastScanMs = millis();
+  port.lastKeyPollMs = millis();
+}
+
+void updatePort(ChainPortContext& port, unsigned long now) {
+  if (port.firstScan && now < BOOT_DIAGNOSTICS_DELAY_MS) {
+    return;
+  }
+  if (now - port.lastScanMs >= CHAIN_SCAN_INTERVAL_MS) {
+    port.lastScanMs = now;
+    scanChainPort(port);
+  }
+  if (now - port.lastKeyPollMs >= CHAIN_KEY_POLL_INTERVAL_MS) {
+    port.lastKeyPollMs = now;
+    updateIdentifyLeds(port);
+    pollKeys(port);
+    pollEncoders(port);
+    pollAngles(port);
+    pollTofs(port);
+    pollJoysticks(port);
+  }
 }
 
 }  // namespace
 
 void chainProbeSetup() {
-  if (!CHAIN_UART_ENABLED) {
-    Serial.println("[ChainOSCnano][CHAIN] uart=disabled");
-    return;
-  }
-  chainBus.begin(&chainSerial, CHAIN_BAUD, CHAIN_RX_PIN, CHAIN_TX_PIN);
-  Serial.printf("[ChainOSCnano][CHAIN] RX=%u TX=%u baud=%lu enabled=true\n",
-                CHAIN_RX_PIN, CHAIN_TX_PIN,
-                static_cast<unsigned long>(CHAIN_BAUD));
-  lastScanMs = millis();
-  lastKeyPollMs = lastScanMs;
-  lastBusRecoveryMs = lastScanMs;
+  setupPort(portG1G2);
+  NANO_VERBOSE_PRINTLN("[ChainOSCnano][CHAIN] single_port=true");
 }
 
 void chainProbeUpdate() {
-  if (!CHAIN_UART_ENABLED) return;
   const unsigned long now = millis();
-  if (now < BOOT_DIAGNOSTICS_DELAY_MS) return;
-  if (now - lastScanMs >= CHAIN_SCAN_INTERVAL_MS) {
-    lastScanMs = now;
-    scanBus();
-  }
-  if (now - lastKeyPollMs >= CHAIN_KEY_POLL_INTERVAL_MS) {
-    lastKeyPollMs = now;
-    if (pollKeys()) {
-      lastScanMs = now;
-      scanBus();
-    }
-  }
+  updatePort(portG1G2, now);
 }
 
-size_t chainProbeKeyCount() {
-  size_t count = 0;
-  for (uint16_t index = 0; index < previousCount; ++index)
-    if (previousDevices[index].type == CHAIN_KEY_TYPE_CODE) ++count;
-  return count;
+bool chainProbeIdentifyDevice(const String& identity) {
+  return identifyOnPort(portG1G2, identity);
 }
 
-String chainProbeKeyUid(size_t requestedIndex) {
-  size_t keyIndex = 0;
-  for (uint16_t index = 0; index < previousCount; ++index) {
-    if (previousDevices[index].type != CHAIN_KEY_TYPE_CODE) continue;
-    if (keyIndex++ == requestedIndex) return uidString(previousDevices[index].uid);
-  }
-  return String();
+size_t chainProbeConnectedDeviceCount() {
+  return static_cast<size_t>(portG1G2.deviceCount);
 }
 
-bool chainProbeKeyConnected(const String& uid) {
-  for (uint16_t index = 0; index < previousCount; ++index) {
-    if (previousDevices[index].type == CHAIN_KEY_TYPE_CODE &&
-        uidString(previousDevices[index].uid) == uid) return true;
+bool chainProbeConnectedDeviceAt(size_t index, String& identity,
+                                uint8_t& deviceType) {
+  const ChainPortContext* port = &portG1G2;
+  if (index >= port->deviceCount) return false;
+
+  const DeviceSnapshot& device = port->devices[index];
+  if (!device.uidValid) return false;
+
+  identity = F("chain:");
+  identity.reserve(6 + UID_SIZE * 2);
+  for (size_t byteIndex = 0; byteIndex < UID_SIZE; ++byteIndex) {
+    char byteText[3];
+    snprintf(byteText, sizeof(byteText), "%02X", device.uid[byteIndex]);
+    identity += byteText;
   }
-  return false;
+  deviceType = static_cast<uint8_t>(device.type);
+  return true;
 }

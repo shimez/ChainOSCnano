@@ -4,6 +4,7 @@
 
 void chainProbeSetup();
 void chainProbeUpdate();
-size_t chainProbeKeyCount();
-String chainProbeKeyUid(size_t index);
-bool chainProbeKeyConnected(const String& uid);
+bool chainProbeIdentifyDevice(const String& identity);
+size_t chainProbeConnectedDeviceCount();
+bool chainProbeConnectedDeviceAt(size_t index, String& identity,
+                                uint8_t& deviceType);

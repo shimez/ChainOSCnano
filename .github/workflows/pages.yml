@@ -1,0 +1,114 @@
+name: Deploy GitHub Pages
+
+on:
+  release:
+    types:
+      - published
+  push:
+    branches:
+      - main
+    paths:
+      - "docs/**"
+      - "scripts/check_release_version.py"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build Pages site
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.release.outputs.ready }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Read Installer version
+        id: installer
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(Path("docs/installer/manifest.json").read_text(encoding="utf-8"))
+          version = str(manifest["version"])
+          firmware = f"ChainOSCnano-{version}-M5NanoC6-merged.bin"
+          print(f"version={version}")
+          print(f"tag=v{version}")
+          print(f"firmware={firmware}")
+          PY
+
+      - name: Check published Release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.installer.outputs.tag }}
+        run: |
+          is_draft="$(gh release view "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --json isDraft \
+            --jq '.isDraft' 2>/dev/null || true)"
+          if [ "$is_draft" = "false" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Release $RELEASE_TAG is not published yet; keeping the current Pages deployment."
+          fi
+
+      - name: Download firmware from published Release
+        if: steps.release.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.installer.outputs.tag }}
+          FIRMWARE_NAME: ${{ steps.installer.outputs.firmware }}
+        run: |
+          rm -rf docs/installer/firmware
+          mkdir -p docs/installer/firmware
+          gh release download "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern "$FIRMWARE_NAME" \
+            --dir docs/installer/firmware
+
+      - name: Validate Installer files
+        if: steps.release.outputs.ready == 'true'
+        run: python3 scripts/check_release_version.py --check-installer
+
+      - name: Configure GitHub Pages
+        if: steps.release.outputs.ready == 'true'
+        uses: actions/configure-pages@v6
+
+      - name: Build documentation with Jekyll
+        if: steps.release.outputs.ready == 'true'
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./docs
+          destination: ./_site
+
+      - name: Upload GitHub Pages artifact
+        if: steps.release.outputs.ready == 'true'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ./_site
+
+  deploy:
+    name: Deploy GitHub Pages
+    needs: build
+    if: needs.build.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

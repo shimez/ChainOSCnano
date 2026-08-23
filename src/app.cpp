@@ -8,7 +8,6 @@
 #include "nano_hardware.h"
 #include "network_manager.h"
 #include "osc_manager.h"
-#include "key_settings.h"
 
 namespace {
 
@@ -22,15 +21,15 @@ void appSetup() {
   delay(250);
 
   nanoHardwareSetup();
-  keySettingsSetup();
-  chainProbeSetup();
   oscSetup();
   networkSetup();
+  chainProbeSetup();
 }
 
 void appLoop() {
   const unsigned long now = millis();
   networkUpdate();
+  nanoHardwareUpdate();
   chainProbeUpdate();
 
   if (!bootDiagnosticsPrinted && now >= BOOT_DIAGNOSTICS_DELAY_MS) {

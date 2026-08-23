@@ -1,243 +1,53 @@
 #include "key_settings.h"
-
 #include <Preferences.h>
-#include <errno.h>
-#include <limits.h>
+#include <ctype.h>
 #include <math.h>
+#include "compact_storage.h"
+#include "logging.h"
 
 namespace {
-
-KeySetting settings[MAX_SAVED_KEY_SETTINGS];
-size_t settingCount = 0;
-
-uint32_t fnv1a(const String& text) {
-  uint32_t hash = 2166136261u;
-  for (size_t index = 0; index < text.length(); ++index) {
-    hash ^= static_cast<uint8_t>(text[index]);
-    hash *= 16777619u;
-  }
-  return hash;
-}
-
-String settingNamespace(const String& uid) {
-  char name[11];
-  snprintf(name, sizeof(name), "k%08lX", static_cast<unsigned long>(fnv1a(uid)));
-  return String(name);
-}
-
-String messageKey(const char* prefix, uint8_t index) {
-  return String(prefix) + String(index);
-}
-
-String defaultAddress(const String& uid) {
-  return String(F("/chainoscnano/key/")) + uid;
-}
-
-void setDefaults(KeySetting& setting, const String& uid) {
-  setting = KeySetting();
-  setting.uid = uid;
-  setting.name = String(F("Key ")) + uid.substring(uid.length() > 6 ? uid.length() - 6 : 0);
-  const String address = defaultAddress(uid);
-  setting.press[0].address = address;
-  setting.press[0].value = "1";
-  setting.press[0].type = TYPE_INT;
-  setting.release[0].address = address;
-  setting.release[0].value = "0";
-  setting.release[0].type = TYPE_INT;
-  setting.sequence.address = address;
-}
-
-bool loadSetting(const String& uid, KeySetting& setting) {
-  Preferences preferences;
-  const String ns = settingNamespace(uid);
-  if (!preferences.begin(ns.c_str(), true)) return false;
-  if (preferences.getString("uid", "") != uid) {
-    preferences.end();
+constexpr size_t MAX_KEY_SETTINGS = 40;
+KeySetting settings[MAX_KEY_SETTINGS]; size_t settingCount=0; bool loadingKnown=false;
+bool validAddress(const String& a){if(a.isEmpty()||a.length()>192||a[0]!='/')return false;for(size_t i=0;i<a.length();++i){char c=a[i];if(isspace((unsigned char)c)||c=='#'||c=='*'||c==','||c=='?'||c=='['||c==']'||c=='{'||c=='}')return false;}return true;}
+bool sameMessage(const KeyOscMessage&a,const KeyOscMessage&b){return a.address==b.address&&a.valueStr==b.valueStr&&a.valueType==b.valueType;}
+bool sameSetting(const KeySetting&a,const KeySetting&b){
+  const char* reason=nullptr;int messageIndex=-1;
+  if(a.identity!=b.identity)reason="identity";
+  else if(a.displayName!=b.displayName)reason="display_name";
+  else if(a.mode!=b.mode)reason="mode";
+  else if(a.pressMessageCount!=b.pressMessageCount)reason="press_count";
+  else if(a.releaseMessageCount!=b.releaseMessageCount)reason="release_count";
+  else if(a.sequence.address!=b.sequence.address)reason="sequence_address";
+  else if(a.sequence.valueType!=b.sequence.valueType)reason="sequence_type";
+  else if(fabsf(a.sequence.start-b.sequence.start)>.00001f)reason="sequence_start";
+  else if(fabsf(a.sequence.end-b.sequence.end)>.00001f)reason="sequence_end";
+  else if(fabsf(a.sequence.step-b.sequence.step)>.00001f)reason="sequence_step";
+  if(!reason)for(uint8_t i=0;i<a.pressMessageCount;++i)if(!sameMessage(a.pressMessages[i],b.pressMessages[i])){reason="press_message";messageIndex=i;break;}
+  if(!reason)for(uint8_t i=0;i<a.releaseMessageCount;++i)if(!sameMessage(a.releaseMessages[i],b.releaseMessages[i])){reason="release_message";messageIndex=i;break;}
+  if(reason){
+    NANO_STORAGE_LOGF("[ChainOSCnano][NVS] key_verify uid=%s result=mismatch field=%s index=%d mode=%d/%d press=%u/%u release=%u/%u seq_type=%d/%d seq=%.7f,%.7f,%.7f/%.7f,%.7f,%.7f\n",
+      a.identity.c_str(),reason,messageIndex,(int)a.mode,(int)b.mode,
+      (unsigned)a.pressMessageCount,(unsigned)b.pressMessageCount,
+      (unsigned)a.releaseMessageCount,(unsigned)b.releaseMessageCount,
+      (int)a.sequence.valueType,(int)b.sequence.valueType,
+      a.sequence.start,a.sequence.end,a.sequence.step,
+      b.sequence.start,b.sequence.end,b.sequence.step);
     return false;
   }
-  setDefaults(setting, uid);
-  setting.name = preferences.getString("name", setting.name);
-  setting.mode = static_cast<KeyMode>(constrain(preferences.getUChar("mode", 0), 0, 1));
-  setting.pressCount = constrain(preferences.getUChar("pc", 1), 0, MAX_KEY_OSC_MESSAGES);
-  setting.releaseCount = constrain(preferences.getUChar("rc", 1), 0, MAX_KEY_OSC_MESSAGES - setting.pressCount);
-  for (uint8_t index = 0; index < setting.pressCount; ++index) {
-    setting.press[index].address = preferences.getString(messageKey("pa", index).c_str(), "");
-    setting.press[index].value = preferences.getString(messageKey("pv", index).c_str(), "");
-    setting.press[index].type = static_cast<ValueType>(constrain(preferences.getUChar(messageKey("pt", index).c_str(), TYPE_INT), 0, 2));
-  }
-  for (uint8_t index = 0; index < setting.releaseCount; ++index) {
-    setting.release[index].address = preferences.getString(messageKey("ra", index).c_str(), "");
-    setting.release[index].value = preferences.getString(messageKey("rv", index).c_str(), "");
-    setting.release[index].type = static_cast<ValueType>(constrain(preferences.getUChar(messageKey("rt", index).c_str(), TYPE_INT), 0, 2));
-  }
-  setting.sequence.address = preferences.getString("sa", defaultAddress(uid));
-  setting.sequence.type = static_cast<ValueType>(constrain(preferences.getUChar("st", TYPE_INT), 0, 2));
-  setting.sequence.start = preferences.getFloat("ss", 0);
-  setting.sequence.end = preferences.getFloat("se", 1);
-  setting.sequence.step = preferences.getFloat("sp", 1);
-  preferences.end();
-  keySettingsNormalizeSequence(setting.sequence);
-  setting.persisted = true;
+  NANO_STORAGE_LOGF("[ChainOSCnano][NVS] key_verify uid=%s result=ok\n",a.identity.c_str());
   return true;
 }
-
-bool saveKnownList() {
-  String list;
-  for (size_t index = 0; index < settingCount; ++index) {
-    if (!settings[index].persisted) continue;
-    if (!list.isEmpty()) list += ',';
-    list += settings[index].uid;
-  }
-  Preferences preferences;
-  if (!preferences.begin(KEY_INDEX_NAMESPACE, false)) return false;
-  const size_t written = preferences.putString("uids", list);
-  preferences.end();
-  return list.isEmpty() || written > 0;
+bool loadSetting(KeySetting&s){return compactStorageLoad(compactStorageNamespace(s.identity),s);}
+bool writeSetting(const KeySetting&s){String ns=compactStorageNamespace(s.identity);if(!compactStorageSave(ns,s))return false;KeySetting v=s;if(!compactStorageLoad(ns,v)){NANO_STORAGE_LOGF("[ChainOSCnano][NVS] key_verify uid=%s result=decode_failed\n",s.identity.c_str());return false;}return sameSetting(s,v);}
+void saveKnown(){if(loadingKnown)return;String known;for(size_t i=0;i<settingCount;++i){if(settings[i].builtIn)continue;if(!known.isEmpty())known+='\n';known+=settings[i].identity;}Preferences p;if(p.begin("keycfg",false)){p.putString("known",known);p.end();}}
 }
 
-bool sameMessage(const KeyOscMessage& left, const KeyOscMessage& right) {
-  return left.address == right.address && left.value == right.value &&
-         left.type == right.type;
-}
-
-bool sameSetting(const KeySetting& left, const KeySetting& right) {
-  if (left.uid != right.uid || left.name != right.name ||
-      left.mode != right.mode || left.pressCount != right.pressCount ||
-      left.releaseCount != right.releaseCount ||
-      left.sequence.address != right.sequence.address ||
-      left.sequence.type != right.sequence.type ||
-      fabsf(left.sequence.start - right.sequence.start) > 0.00001f ||
-      fabsf(left.sequence.end - right.sequence.end) > 0.00001f ||
-      fabsf(left.sequence.step - right.sequence.step) > 0.00001f)
-    return false;
-  for (uint8_t index = 0; index < left.pressCount; ++index)
-    if (!sameMessage(left.press[index], right.press[index])) return false;
-  for (uint8_t index = 0; index < left.releaseCount; ++index)
-    if (!sameMessage(left.release[index], right.release[index])) return false;
-  return true;
-}
-
-}  // namespace
-
-bool keySettingsValidAddress(const String& address) {
-  if (address.length() < 1 || address.length() > OSC_ADDRESS_MAX_BYTES || address[0] != '/') return false;
-  for (size_t index = 0; index < address.length(); ++index) {
-    const unsigned char value = static_cast<unsigned char>(address[index]);
-    if (value < 0x20 || value == 0x7F) return false;
-  }
-  return true;
-}
-
-bool keySettingsValidMessage(const KeyOscMessage& message) {
-  if (!keySettingsValidAddress(message.address) || message.value.length() > OSC_VALUE_MAX_BYTES) return false;
-  if (message.type == TYPE_STRING) return true;
-  if (message.type == TYPE_INT) {
-    char* end = nullptr;
-    errno = 0;
-    const long value = strtol(message.value.c_str(), &end, 10);
-    return end != message.value.c_str() && *end == '\0' && errno != ERANGE &&
-           value >= INT32_MIN && value <= INT32_MAX;
-  }
-  char* end = nullptr;
-  const float value = strtof(message.value.c_str(), &end);
-  return end != message.value.c_str() && *end == '\0' && isfinite(value);
-}
-
-void keySettingsNormalizeSequence(KeySequence& sequence) {
-  if (!isfinite(sequence.start)) sequence.start = 0;
-  if (!isfinite(sequence.end)) sequence.end = 1;
-  if (!isfinite(sequence.step) || fabsf(sequence.step) < 0.000001f) sequence.step = sequence.end >= sequence.start ? 1 : -1;
-  if (sequence.start < sequence.end && sequence.step < 0) sequence.step = -sequence.step;
-  if (sequence.start > sequence.end && sequence.step > 0) sequence.step = -sequence.step;
-  sequence.current = sequence.start;
-}
-
-void keySettingsSetup() {
-  Preferences preferences;
-  String list;
-  if (preferences.begin(KEY_INDEX_NAMESPACE, true)) {
-    list = preferences.getString("uids", "");
-    preferences.end();
-  }
-  size_t offset = 0;
-  while (offset < list.length() && settingCount < MAX_SAVED_KEY_SETTINGS) {
-    int separator = list.indexOf(',', offset);
-    if (separator < 0) separator = list.length();
-    const String uid = list.substring(offset, separator);
-    if (!uid.isEmpty() && loadSetting(uid, settings[settingCount])) ++settingCount;
-    offset = separator + 1;
-  }
-  Serial.printf("[ChainOSCnano][KEYCFG] loaded=%u\n", static_cast<unsigned>(settingCount));
-}
-
-KeySetting* keySettingsFind(const String& uid) {
-  for (size_t index = 0; index < settingCount; ++index) if (settings[index].uid == uid) return &settings[index];
-  return nullptr;
-}
-
-KeySetting* keySettingsEnsure(const String& uid) {
-  if (KeySetting* existing = keySettingsFind(uid)) return existing;
-  if (settingCount >= MAX_SAVED_KEY_SETTINGS) return nullptr;
-  KeySetting& setting = settings[settingCount++];
-  if (!loadSetting(uid, setting)) setDefaults(setting, uid);
-  return &setting;
-}
-
-size_t keySettingsCount() { return settingCount; }
-KeySetting* keySettingsAt(size_t index) { return index < settingCount ? &settings[index] : nullptr; }
-
-bool keySettingsSave(KeySetting& setting) {
-  if (setting.name.length() > DEVICE_NAME_MAX_BYTES ||
-      setting.pressCount + setting.releaseCount > MAX_KEY_OSC_MESSAGES ||
-      !keySettingsValidAddress(setting.sequence.address)) return false;
-  for (uint8_t index = 0; index < setting.pressCount; ++index) if (!keySettingsValidMessage(setting.press[index])) return false;
-  for (uint8_t index = 0; index < setting.releaseCount; ++index) if (!keySettingsValidMessage(setting.release[index])) return false;
-  keySettingsNormalizeSequence(setting.sequence);
-  Preferences preferences;
-  const String ns = settingNamespace(setting.uid);
-  if (!preferences.begin(ns.c_str(), false)) return false;
-  preferences.clear();
-  preferences.putString("uid", setting.uid);
-  preferences.putString("name", setting.name);
-  preferences.putUChar("mode", setting.mode);
-  preferences.putUChar("pc", setting.pressCount);
-  preferences.putUChar("rc", setting.releaseCount);
-  for (uint8_t index = 0; index < setting.pressCount; ++index) {
-    preferences.putString(messageKey("pa", index).c_str(), setting.press[index].address);
-    preferences.putString(messageKey("pv", index).c_str(), setting.press[index].value);
-    preferences.putUChar(messageKey("pt", index).c_str(), setting.press[index].type);
-  }
-  for (uint8_t index = 0; index < setting.releaseCount; ++index) {
-    preferences.putString(messageKey("ra", index).c_str(), setting.release[index].address);
-    preferences.putString(messageKey("rv", index).c_str(), setting.release[index].value);
-    preferences.putUChar(messageKey("rt", index).c_str(), setting.release[index].type);
-  }
-  preferences.putString("sa", setting.sequence.address);
-  preferences.putUChar("st", setting.sequence.type);
-  preferences.putFloat("ss", setting.sequence.start);
-  preferences.putFloat("se", setting.sequence.end);
-  preferences.putFloat("sp", setting.sequence.step);
-  preferences.end();
-  KeySetting verified;
-  if (!loadSetting(setting.uid, verified) || !sameSetting(setting, verified)) {
-    Serial.printf("[ChainOSCnano][KEYCFG] save_verify_failed uid=%s\n",
-                  setting.uid.c_str());
-    return false;
-  }
-  setting.persisted = true;
-  const bool indexed = saveKnownList();
-  Serial.printf("[ChainOSCnano][KEYCFG] saved uid=%s mode=%u press=%u release=%u indexed=%s\n", setting.uid.c_str(), setting.mode, setting.pressCount, setting.releaseCount, indexed ? "true" : "false");
-  return indexed;
-}
-
-bool keySettingsDelete(const String& uid) {
-  size_t found = settingCount;
-  for (size_t index = 0; index < settingCount; ++index) if (settings[index].uid == uid) { found = index; break; }
-  if (found == settingCount) return false;
-  Preferences preferences;
-  const String ns = settingNamespace(uid);
-  if (preferences.begin(ns.c_str(), false)) { preferences.clear(); preferences.end(); }
-  for (size_t index = found + 1; index < settingCount; ++index) settings[index - 1] = settings[index];
-  --settingCount;
-  return saveKnownList();
-}
+void keySettingsNormalizeSequence(KeySequenceConfig&s){if(!isfinite(s.start))s.start=0;if(!isfinite(s.end))s.end=10;if(!isfinite(s.step)||fabsf(s.step)<1e-9f)s.step=1;if(s.start<=s.end&&s.step<0)s.step=-s.step;if(s.start>s.end&&s.step>0)s.step=-s.step;s.current=s.start;}
+void keySettingsSetup(){Preferences p;String known;if(p.begin("keycfg",true)){known=p.getString("known","");p.end();}loadingKnown=true;int o=0;while(o<(int)known.length()){int e=known.indexOf('\n',o);if(e<0)e=known.length();String id=known.substring(o,e);if(id.startsWith("chain:")&&id.length()>6){String uid=id.substring(6);keySettingsEnsure(id,String("Chain Key ")+uid,String("/chainoscnano/chain/key/")+uid);}o=e+1;}loadingKnown=false;}
+KeySetting* keySettingsEnsure(const String&id,const String&name,const String&address){for(size_t i=0;i<settingCount;++i)if(settings[i].identity==id)return &settings[i];if(settingCount>=MAX_KEY_SETTINGS)return nullptr;KeySetting&s=settings[settingCount++];s.identity=id;s.displayName=name;s.pressMessages[0].address=address;s.pressMessages[0].valueType=TYPE_INT;s.pressMessages[0].valueStr="1";s.releaseMessages[0].address=address;s.releaseMessages[0].valueType=TYPE_INT;s.releaseMessages[0].valueStr="0";s.sequence.address=address;keySettingsNormalizeSequence(s.sequence);loadSetting(s);if(!s.builtIn)saveKnown();return &s;}
+size_t keySettingsCount(){return settingCount;} KeySetting* keySettingsAt(size_t i){return i<settingCount?&settings[i]:nullptr;}
+bool keySettingsSave(const KeySetting&c){if(c.identity.isEmpty()||c.displayName.isEmpty()||c.displayName.length()>64||c.pressMessageCount+c.releaseMessageCount>MAX_KEY_OSC_MESSAGES||!validAddress(c.sequence.address))return false;for(uint8_t i=0;i<c.pressMessageCount;++i)if(!validAddress(c.pressMessages[i].address))return false;for(uint8_t i=0;i<c.releaseMessageCount;++i)if(!validAddress(c.releaseMessages[i].address))return false;KeySetting*d=nullptr;for(size_t i=0;i<settingCount;++i)if(settings[i].identity==c.identity)d=&settings[i];if(!d||!writeSetting(c))return false;bool builtIn=d->builtIn;uint8_t mask=d->connectedPortMask;*d=c;d->builtIn=builtIn;d->connectedPortMask=mask;keySettingsNormalizeSequence(d->sequence);return true;}
+bool keySettingsDelete(const String&id){size_t found=settingCount;for(size_t i=0;i<settingCount;++i)if(settings[i].identity==id){if(settings[i].builtIn||settings[i].connectedPortMask)return false;found=i;break;}if(found==settingCount)return false;compactStorageDelete(id);for(size_t i=found+1;i<settingCount;++i)settings[i-1]=settings[i];--settingCount;settings[settingCount]=KeySetting();saveKnown();return true;}
+void keySettingsBeginPortUpdate(uint8_t mask){for(size_t i=0;i<settingCount;++i)if(!settings[i].builtIn)settings[i].connectedPortMask&=~mask;}
+void keySettingsMarkConnected(const String&id,uint8_t mask){for(size_t i=0;i<settingCount;++i)if(settings[i].identity==id){settings[i].connectedPortMask|=mask;return;}}
+void keySettingsPrintState(){}
