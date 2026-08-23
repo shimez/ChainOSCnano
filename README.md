@@ -7,9 +7,9 @@ M5NanoC6とM5Stack Chainデバイスを組み合わせ、コンパクトなOSC�
 
 ## 現在のバージョン
 
-### v0.4.0 — Chain Key OSC transmission
+### v0.5.0 — Configurable Chain Key messages
 
-Chain Keyの入力に応じたOSC送信と、ブラウザーからのOSC送信先設定を追加したバージョンです。Chainデバイスごとの詳細設定UIはまだ実装されていません。
+Chain Keyごとのデバイス名、複数OSCメッセージ、Sequenceをブラウザーから設定できるバージョンです。設定はUID単位で保存され、抜き差しや接続順変更後も復元されます。
 
 v0.1.0の実機検証では次の項目を確認済みです。
 
@@ -60,6 +60,24 @@ v0.4.0では次のOSC機能を追加しています。
 ```text
 /chainoscnano/key/78000C001651343430383836
 ```
+
+v0.5.0では次のKey設定機能を追加しています。
+
+- 接続中のChain KeyをUID単位のカードとして表示
+- デバイス名の設定
+- 「押した時／離した時」と「シーケンス」のモード切り替え
+- Press／Release合計8件までのOSCメッセージ
+- OSC Address、Float／Int／String、値の設定
+- メッセージの追加、削除、並べ替え
+- 0件の場合は該当イベントでOSCを送信しない
+- SequenceのAddress、開始値、終了値、増減量、型、周回動作
+- SequenceモードのKeyを押した時はChain KeyのLEDを緑色で表示
+- UID単位のNVS保存と再起動後の復元
+- 保存済みChain Key設定は最大16台
+- 接続中デバイスと保存済み未接続デバイスの分離表示
+- 未接続デバイス設定の削除
+
+ブラウザーで`http://chainoscnano.local/`または本体のIPアドレスを開き、各Chain Keyを設定して「すべての設定を保存」を押します。
 
 ## 初回Wi-Fi設定
 
@@ -139,8 +157,7 @@ ESP32-C6のArduinoフレームワークを利用するため、`platformio.ini`�
 
 ## 今後の予定
 
-- Chainデバイス設定用Web UI
-- 設定保存とJSON／プリセット互換
+- JSONバックアップ／プリセット互換
 - 対応Chainデバイスの拡大
 
 実装時は、M5ChainOSCおよびChainOSCminiとの設定・プリセット互換性を重視します。

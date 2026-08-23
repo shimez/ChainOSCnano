@@ -6,6 +6,22 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-08-24
+
+### Added
+
+- UID単位のChain Key設定モデルとデバイス別NVS保存
+- デバイス名とKey ModeのWeb設定
+- Press／Release合計8件までのOSCメッセージ設定
+- Float／Int／Stringの型別OSC送信
+- メッセージの追加、削除、並べ替え
+- OSCメッセージ0件時の送信抑止
+- Start／End／Step／Typeと周回を備えたSequenceモード
+- Sequenceモードの押下を示すChain Keyの緑色LED表示
+- 接続中デバイスと保存済み未接続デバイスの分離表示
+- 保存済み未接続デバイス設定の削除
+- 一括保存前のAddress、値、件数、Sequenceの検証
+
 ## [0.4.0] - 2026-08-24
 
 ### Added
@@ -69,7 +85,8 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 - M5NanoC6内蔵RGB LEDの初期化
 - v0.1.0向けREADME、テスト手順、第三者ライセンス表記
 
-[Unreleased]: https://github.com/shimez/ChainOSCnano/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/shimez/ChainOSCnano/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/shimez/ChainOSCnano/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/shimez/ChainOSCnano/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/shimez/ChainOSCnano/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/shimez/ChainOSCnano/compare/v0.1.0...v0.2.0

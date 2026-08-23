@@ -5,21 +5,38 @@
 #include <WiFi.h>
 
 #include "config.h"
+#include "key_settings.h"
 
 namespace {
 
 String targetHost = OSC_DEFAULT_HOST;
 uint16_t targetPort = OSC_DEFAULT_PORT;
 
-String keyAddress(const uint8_t* uid, size_t uidLength) {
-  static constexpr char HEX[] = "0123456789ABCDEF";
-  String address = F("/chainoscnano/key/");
-  address.reserve(address.length() + uidLength * 2);
+String uidString(const uint8_t* uid, size_t uidLength) {
+  static constexpr char HEX_DIGITS[] = "0123456789ABCDEF";
+  String value;
+  value.reserve(uidLength * 2);
   for (size_t index = 0; index < uidLength; ++index) {
-    address += HEX[(uid[index] >> 4) & 0x0F];
-    address += HEX[uid[index] & 0x0F];
+    value += HEX_DIGITS[(uid[index] >> 4) & 0x0F];
+    value += HEX_DIGITS[uid[index] & 0x0F];
   }
-  return address;
+  return value;
+}
+
+void sendMessage(const KeyOscMessage& message) {
+  if (message.type == TYPE_FLOAT) {
+    OscWiFi.send(targetHost.c_str(), targetPort, message.address.c_str(),
+                 message.value.toFloat());
+  } else if (message.type == TYPE_INT) {
+    OscWiFi.send(targetHost.c_str(), targetPort, message.address.c_str(),
+                 static_cast<int32_t>(strtol(message.value.c_str(), nullptr, 10)));
+  } else {
+    OscWiFi.send(targetHost.c_str(), targetPort, message.address.c_str(),
+                 message.value.c_str());
+  }
+  Serial.printf("[ChainOSCnano][OSC] sent address=%s type=%u value=%s target=%s:%u\n",
+                message.address.c_str(), message.type, message.value.c_str(),
+                targetHost.c_str(), targetPort);
 }
 
 }  // namespace
@@ -58,15 +75,36 @@ bool oscSaveTarget(const String& host, uint16_t port) {
 }
 
 void oscSendKeyEvent(const uint8_t* uid, size_t uidLength, bool pressed) {
-  const String address = keyAddress(uid, uidLength);
+  const String uidText = uidString(uid, uidLength);
   if (WiFi.status() != WL_CONNECTED) {
     Serial.printf(
-        "[ChainOSCnano][OSC] skipped reason=wifi_disconnected address=%s value=%d\n",
-        address.c_str(), pressed ? 1 : 0);
+        "[ChainOSCnano][OSC] skipped reason=wifi_disconnected uid=%s state=%s\n",
+        uidText.c_str(), pressed ? "PRESSED" : "RELEASED");
     return;
   }
-  OscWiFi.send(targetHost.c_str(), targetPort, address.c_str(), pressed ? 1 : 0);
-  Serial.printf(
-      "[ChainOSCnano][OSC] sent target=%s:%u address=%s type=Int value=%d\n",
-      targetHost.c_str(), targetPort, address.c_str(), pressed ? 1 : 0);
+  KeySetting* setting = keySettingsEnsure(uidText);
+  if (!setting) {
+    Serial.printf("[ChainOSCnano][OSC] skipped reason=no_key_setting uid=%s\n",
+                  uidText.c_str());
+    return;
+  }
+  if (setting->mode == MODE_SEQUENCE) {
+    if (!pressed) return;
+    KeyOscMessage message;
+    message.address = setting->sequence.address;
+    message.type = setting->sequence.type;
+    message.value = message.type == TYPE_INT
+                        ? String(static_cast<int32_t>(lroundf(setting->sequence.current)))
+                        : String(setting->sequence.current, 3);
+    sendMessage(message);
+    float next = setting->sequence.current + setting->sequence.step;
+    if ((setting->sequence.step > 0 && next > setting->sequence.end + 0.000001f) ||
+        (setting->sequence.step < 0 && next < setting->sequence.end - 0.000001f))
+      next = setting->sequence.start;
+    setting->sequence.current = next;
+    return;
+  }
+  KeyOscMessage* messages = pressed ? setting->press : setting->release;
+  const uint8_t count = pressed ? setting->pressCount : setting->releaseCount;
+  for (uint8_t index = 0; index < count; ++index) sendMessage(messages[index]);
 }

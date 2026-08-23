@@ -11,6 +11,7 @@
 #include "config.h"
 #include "nano_hardware.h"
 #include "osc_manager.h"
+#include "key_web.h"
 
 namespace {
 
@@ -32,6 +33,8 @@ bool restartScheduled = false;
 unsigned long restartAtMs = 0;
 unsigned long lastConnectingLedChangeMs = 0;
 bool connectingLedOn = true;
+bool japaneseUi = false;
+bool uiLanguageConfigured = false;
 
 void updateConnectingLed(bool force = false) {
   const unsigned long now = millis();
@@ -44,9 +47,26 @@ void updateConnectingLed(bool force = false) {
 }
 
 bool isJapaneseRequest() {
+  return japaneseUi;
+}
+
+void saveUiLanguage() {
+  Preferences preferences;
+  if (preferences.begin("ui", false)) {
+    preferences.putUChar("language", japaneseUi ? 1 : 0);
+    preferences.end();
+    uiLanguageConfigured = true;
+  }
+}
+
+void applyBrowserLanguageOnFirstVisit() {
+  if (uiLanguageConfigured) return;
   String accepted = server.header("Accept-Language");
   accepted.toLowerCase();
-  return accepted.startsWith("ja");
+  if (!accepted.isEmpty()) {
+    japaneseUi = accepted.startsWith("ja");
+    saveUiLanguage();
+  }
 }
 
 const char* tr(bool japanese, const char* english, const char* japaneseText) {
@@ -77,7 +97,10 @@ String pageStart(const char* title, bool japanese) {
   html += F("'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>");
   html += F("<title>");
   html += title;
-  html += F("</title><style>body{font-family:sans-serif;margin:16px;background:#f5f5f5;color:#18212f}main{max-width:680px;margin:auto}.card{background:#fff;padding:18px;border-radius:10px;margin-bottom:16px;box-shadow:0 2px 5px rgba(0,0,0,.1)}h1{font-size:1.45em}h2{font-size:1.1em}label{display:block;margin-top:12px;font-weight:bold}input{width:100%;padding:10px;margin-top:5px;box-sizing:border-box;font-size:1em}button{width:100%;padding:12px;margin-top:16px;border:0;border-radius:6px;background:#3267e3;color:#fff;font-size:1em}.danger{background:#dc3545}.status{padding:11px;background:#edf3ff;color:#244da7;border-radius:8px}.note{color:#667085;line-height:1.5;word-break:break-word}</style></head><body><main>");
+  html += F("</title><style>body{font-family:sans-serif;margin:16px;background:#f5f5f5;color:#18212f}main{max-width:1080px;margin:auto}.card{background:#fff;padding:18px;border-radius:10px;margin-bottom:16px;box-shadow:0 2px 5px rgba(0,0,0,.1)}h1{font-size:1.45em}h2{font-size:1.1em}h3{font-size:1em}label{display:block;margin-top:8px;font-weight:bold}input,select{width:100%;padding:10px;margin-top:5px;box-sizing:border-box;font-size:1em}button{width:100%;padding:12px;margin-top:16px;border:0;border-radius:6px;background:#3267e3;color:#fff;font-size:1em}.danger{background:#dc3545}.status{padding:11px;background:#edf3ff;color:#244da7;border-radius:8px}.note{color:#667085;line-height:1.5;word-break:break-word}");
+  html += keyWebStyles();
+  html += F(".badge-on{background:#d4edda;color:#155724}.badge-off{background:#f8d7da;color:#721c24}.event-tabs{display:flex;gap:4px;padding:4px;background:#edf0f4;border-radius:9px;margin-top:12px}.event-tab{margin:0;background:transparent;color:#697586}.event-tab.active{background:#fff;color:#18212f;box-shadow:0 1px 4px #bbb}.event-panel{margin-top:12px;background:transparent;padding:0;border-radius:0}.event-panel>h3{display:none}.save-bar{position:sticky;z-index:15;bottom:8px;display:flex;align-items:center;gap:12px;padding:10px 12px;margin:16px 0 28px;background:rgba(255,255,255,.96);border:1px solid #dce2ea;border-radius:10px;box-shadow:0 5px 18px rgba(0,0,0,.14)}.save-bar .save-all{position:static;flex:1;margin:0;background:#28a745}.language-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.language-row h2{margin:0}.language-row form{margin:0;min-width:150px}.language-row select{margin:0}.system-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.system-item{padding:10px;background:#f8f9fa;border-radius:6px}.system-item strong{display:block;margin-bottom:5px;font-size:.9em}.system-item code{word-break:break-all}@media(max-width:620px){.system-grid{grid-template-columns:1fr}}");
+  html += F("</style></head><body><main>");
   return html;
 }
 
@@ -89,7 +112,13 @@ void sendPage(String html) {
 void sendProvisioningPage(const String& error = "") {
   const bool japanese = isJapaneseRequest();
   String html = pageStart("ChainOSCnano Wi-Fi Setup", japanese);
-  html += F("<h1>ChainOSCnano</h1><div class='card'><h2>");
+  html += F("<h1>ChainOSCnano</h1><div class='card language-row'><h2>");
+  html += tr(japanese, "Language", "言語");
+  html += F("</h2><form action='/set_language' method='POST'><select name='language' onchange='this.form.submit()'><option value='en'");
+  if (!japanese) html += F(" selected");
+  html += F(">English</option><option value='ja'");
+  if (japanese) html += F(" selected");
+  html += F(">日本語</option></select></form></div><div class='card'><h2>");
   html += tr(japanese, "Wi-Fi setup", "Wi-Fi設定");
   html += F("</h2><p class='status'>");
   html += tr(japanese,
@@ -116,56 +145,64 @@ void sendProvisioningPage(const String& error = "") {
 void sendConnectedPage(const String& message = "", bool error = false) {
   const bool japanese = isJapaneseRequest();
   String html = pageStart("ChainOSCnano", japanese);
-  html += F("<h1>ChainOSCnano</h1><div class='card'><h2>");
-  html += tr(japanese, "Network status", "ネットワーク状態");
+  html += F("<div id='save-toast' class='toast' hidden></div><h1>Chain OSC Setting</h1><div class='card language-row'><h2>");
+  html += tr(japanese, "Language", "言語");
+  html += F("</h2><form action='/set_language' method='POST'><select name='language' onchange='this.form.submit()'><option value='en'");
+  if (!japanese) html += F(" selected");
+  html += F(">English</option><option value='ja'");
+  if (japanese) html += F(" selected");
+  html += F(">日本語</option></select></form></div><div class='card'><h2>");
+  html += tr(japanese, "System", "システム");
   html += F("</h2><p class='status'>");
   html += tr(japanese, "Wi-Fi connected", "Wi-Fi接続済み");
-  html += F("</p><p class='note'>IP: ");
-  html += WiFi.localIP().toString();
-  html += F("<br>mDNS: http://");
-  html += WIFI_MDNS_HOST;
-  html += F(".local/<br>Version: ");
+  html += F("</p><div class='system-grid'><div class='system-item'><strong>");
+  html += tr(japanese, "Product", "製品名");
+  html += F("</strong><code>ChainOSCnano</code></div><div class='system-item'><strong>Version</strong>");
   html += APP_VERSION;
-  html += F("</p></div><div class='card'><h2>");
-  html += tr(japanese, "OSC destination", "OSC送信先");
-  html += F("</h2>");
+  html += F("</div><div class='system-item'><strong>");
+  html += tr(japanese, "IP Address", "IPアドレス");
+  html += F("</strong><code>");
+  html += WiFi.localIP().toString();
+  html += F("</code></div><div class='system-item'><strong>mDNS</strong><code>http://");
+  html += WIFI_MDNS_HOST;
+  html += F(".local/</code></div></div></div><div class='card'><h2>WiFi</h2><p class='note'>IP: ");
+  html += WiFi.localIP().toString();
+  html += F("</p><form method='POST' action='/forget-wifi'><button class='danger' type='submit'>");
+  html += tr(japanese, "Delete Wi-Fi settings", "Wi-Fi設定を削除");
+  html += F("</button></form></div>");
   if (!message.isEmpty()) {
     html += error ? F("<p style='color:#c73c4a'>") : F("<p class='status'>");
     html += htmlEscape(message);
     html += F("</p>");
   }
-  html += F("<form method='POST' action='/save-osc'><label>");
+  html += F("<form id='settings-form' method='POST' action='/save-all'><div class='card'><h2>");
+  html += tr(japanese, "OSC destination", "OSC送信先");
+  html += F("</h2><label>");
   html += tr(japanese, "IPv4 address", "IPv4アドレス");
-  html += F("</label><input name='host' inputmode='decimal' maxlength='15' required value='");
+  html += F("</label><input name='osc_host' inputmode='decimal' maxlength='15' required value='");
   html += htmlEscape(oscTargetHost());
   html += F("'><label>");
   html += tr(japanese, "UDP port", "UDPポート");
-  html += F("</label><input name='port' type='number' min='1' max='65535' required value='");
+  html += F("</label><input name='osc_port' type='number' min='1' max='65535' required value='");
   html += String(oscTargetPort());
-  html += F("'><button type='submit'>");
-  html += tr(japanese, "Save OSC destination", "OSC送信先を保存");
-  html += F("</button></form><p class='note'>");
-  html += tr(japanese,
-             "Each Chain Key sends Int 1 when pressed and Int 0 when released.",
-             "各Chain Keyは、押した時にInt 1、離した時にInt 0を送信します。");
-  html += F("</p></div><div class='card'><h2>");
-  html += tr(japanese, "Wi-Fi settings", "Wi-Fi設定");
-  html += F("</h2><form method='POST' action='/forget-wifi'><button class='danger' type='submit'>");
-  html += tr(japanese, "Delete Wi-Fi settings", "Wi-Fi設定を削除");
-  html += F("</button></form></div>");
+  html += F("'></div>");
+  html += keyWebConnectedHtml(japanese);
+  html += keyWebSavedHtml(japanese);
+  html += keyWebScript();
   sendPage(html);
 }
 
 void handleRoot() {
+  applyBrowserLanguageOnFirstVisit();
   if (networkState == NetworkState::AP_MODE) sendProvisioningPage();
   else sendConnectedPage();
 }
 
-void handleSaveOsc() {
+bool parseOscFromRequest(String& host, uint16_t& port, String& error) {
   const bool japanese = isJapaneseRequest();
-  String host = server.arg("host");
+  host = server.arg("osc_host");
   host.trim();
-  const String portText = server.arg("port");
+  const String portText = server.arg("osc_port");
   IPAddress parsedAddress;
   bool portDigitsOnly = !portText.isEmpty();
   for (size_t index = 0; portDigitsOnly && index < portText.length(); ++index) {
@@ -173,28 +210,67 @@ void handleSaveOsc() {
   }
   const unsigned long parsedPort = portText.toInt();
   if (!parsedAddress.fromString(host)) {
-    sendConnectedPage(
-        tr(japanese, "Enter a valid IPv4 address.",
-           "正しいIPv4アドレスを入力してください。"),
-        true);
-    return;
+    error = tr(japanese, "Enter a valid IPv4 address.", "正しいIPv4アドレスを入力してください。");
+    return false;
   }
   if (!portDigitsOnly || parsedPort < 1 || parsedPort > 65535) {
-    sendConnectedPage(
-        tr(japanese, "UDP port must be between 1 and 65535.",
-           "UDPポートは1～65535で入力してください。"),
-        true);
+    error = tr(japanese, "UDP port must be between 1 and 65535.", "UDPポートは1～65535で入力してください。");
+    return false;
+  }
+  port = static_cast<uint16_t>(parsedPort);
+  return true;
+}
+
+void handleSaveAll() {
+  String saveError;
+  String oscHost;
+  uint16_t oscPort = 0;
+  if (!parseOscFromRequest(oscHost, oscPort, saveError)) {
+    if (server.hasArg("ajax")) server.send(400, "text/plain; charset=utf-8", saveError);
+    else sendConnectedPage(saveError, true);
     return;
   }
-  if (!oscSaveTarget(host, static_cast<uint16_t>(parsedPort))) {
-    sendConnectedPage(
-        tr(japanese, "Could not save the OSC destination.",
-           "OSC送信先を保存できませんでした。"),
-        true);
+  if (!keyWebSave(server, saveError)) {
+    if (server.hasArg("ajax")) server.send(400, "text/plain; charset=utf-8", saveError);
+    else sendConnectedPage(saveError, true);
     return;
   }
-  sendConnectedPage(
-      tr(japanese, "OSC destination saved.", "OSC送信先を保存しました。"));
+  if (!oscSaveTarget(oscHost, oscPort)) {
+    const String error = tr(isJapaneseRequest(),
+                            "Could not save the OSC destination.",
+                            "OSC送信先を保存できませんでした。");
+    if (server.hasArg("ajax")) server.send(500, "text/plain; charset=utf-8", error);
+    else sendConnectedPage(error, true);
+    return;
+  }
+  const bool japanese = isJapaneseRequest();
+  const String message = tr(japanese, "All settings saved.",
+                            "すべての設定を保存しました。");
+  if (server.hasArg("ajax")) server.send(200, "text/plain; charset=utf-8", message);
+  else sendConnectedPage(message);
+}
+
+void handleSetLanguage() {
+  if (server.hasArg("language")) {
+    japaneseUi = server.arg("language") == "ja";
+    saveUiLanguage();
+  }
+  server.sendHeader("Location", "/", true);
+  server.send(303, "text/plain", "");
+}
+
+void handleDeleteKey() {
+  String deleteError;
+  if (!keyWebDelete(server, deleteError)) {
+    if (server.hasArg("ajax")) server.send(400, "text/plain; charset=utf-8", deleteError);
+    else sendConnectedPage(deleteError, true);
+    return;
+  }
+  const bool japanese = isJapaneseRequest();
+  const String message = tr(japanese, "Saved device settings deleted.",
+                            "保存済みデバイス設定を削除しました。");
+  if (server.hasArg("ajax")) server.send(200, "text/plain; charset=utf-8", message);
+  else sendConnectedPage(message);
 }
 
 bool validWifiInput(const String& ssid, const String& password,
@@ -289,9 +365,11 @@ void registerRoutes() {
   const char* trackedHeaders[] = {"Accept-Language"};
   server.collectHeaders(trackedHeaders, 1);
   server.on("/", HTTP_GET, handleRoot);
+  server.on("/set_language", HTTP_POST, handleSetLanguage);
   server.on("/save-wifi", HTTP_POST, handleSaveWifi);
   server.on("/forget-wifi", HTTP_POST, handleForgetWifi);
-  server.on("/save-osc", HTTP_POST, handleSaveOsc);
+  server.on("/save-all", HTTP_POST, handleSaveAll);
+  server.on("/delete-key", HTTP_POST, handleDeleteKey);
   server.on("/generate_204", HTTP_ANY, handleRoot);
   server.on("/hotspot-detect.html", HTTP_ANY, handleRoot);
   server.on("/ncsi.txt", HTTP_ANY, handleRoot);
@@ -364,6 +442,13 @@ void handleConnected() {
 void networkSetup() {
   Serial.println("[ChainOSCnano][NET] setup_begin=true");
   Preferences preferences;
+  if (preferences.begin("ui", true)) {
+    if (preferences.isKey("language")) {
+      japaneseUi = preferences.getUChar("language", 0) != 0;
+      uiLanguageConfigured = true;
+    }
+    preferences.end();
+  }
   if (preferences.begin(WIFI_PREFS_NAMESPACE, true)) {
     savedSsid = preferences.getString("ssid", "");
     savedPassword = preferences.getString("password", "");

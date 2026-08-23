@@ -6,6 +6,7 @@
 
 #include "config.h"
 #include "osc_manager.h"
+#include "key_settings.h"
 
 namespace {
 
@@ -31,6 +32,7 @@ unsigned long lastBusRecoveryMs = 0;
 uint8_t consecutiveScanFailures = 0;
 uint8_t colorBlue[] = {0, 0, 255};
 uint8_t colorOrange[] = {255, 64, 0};
+uint8_t colorGreen[] = {0, 255, 64};
 
 bool hasStatusLed(chain_device_type_t type) {
   return type == CHAIN_KEY_TYPE_CODE || type == CHAIN_ENCODER_TYPE_CODE ||
@@ -64,6 +66,22 @@ void printUid(const uint8_t* uid) {
   for (size_t index = 0; index < UID_SIZE; ++index) {
     Serial.printf("%02X", uid[index]);
   }
+}
+
+String uidString(const uint8_t* uid) {
+  static constexpr char HEX_DIGITS[] = "0123456789ABCDEF";
+  String value;
+  value.reserve(UID_SIZE * 2);
+  for (size_t index = 0; index < UID_SIZE; ++index) {
+    value += HEX_DIGITS[(uid[index] >> 4) & 0x0F];
+    value += HEX_DIGITS[uid[index] & 0x0F];
+  }
+  return value;
+}
+
+bool sequenceMode(const DeviceSnapshot& device) {
+  KeySetting* setting = keySettingsFind(uidString(device.uid));
+  return setting && setting->mode == MODE_SEQUENCE;
 }
 
 void drainKeyReports(uint16_t id) {
@@ -174,9 +192,14 @@ void initializeKey(DeviceSnapshot& device) {
   device.lastButtonStatus = rawStatus != 0 ? 1 : 0;
   device.buttonInitialized = true;
   device.keyReadErrorReported = false;
+  const bool sequence = sequenceMode(device);
   const bool ledUpdated = setDeviceLed(
-      device, device.lastButtonStatus != 0 ? colorOrange : colorBlue,
-      device.lastButtonStatus != 0 ? "ORANGE" : "BLUE");
+      device, device.lastButtonStatus != 0
+                  ? (sequence ? colorGreen : colorOrange)
+                  : colorBlue,
+      device.lastButtonStatus != 0
+          ? (sequence ? "GREEN" : "ORANGE")
+          : "BLUE");
   if (!ledUpdated) device.buttonInitialized = false;
 
   Serial.printf("[ChainOSCnano][CHAIN_KEY] ready id=%u uid=", device.id);
@@ -184,7 +207,9 @@ void initializeKey(DeviceSnapshot& device) {
   Serial.printf(
       " initial=%s led=%s\n",
       device.lastButtonStatus != 0 ? "PRESSED" : "RELEASED",
-      ledUpdated ? (device.lastButtonStatus != 0 ? "ORANGE" : "BLUE")
+      ledUpdated ? (device.lastButtonStatus != 0
+                         ? (sequence ? "GREEN" : "ORANGE")
+                         : "BLUE")
                  : "ERROR");
 }
 
@@ -223,10 +248,15 @@ bool pollKeys() {
     if (!device.buttonInitialized) {
       device.lastButtonStatus = buttonStatus;
       device.buttonInitialized = true;
+      const bool sequence = sequenceMode(device);
       if (!deviceIdentityMatches(device) ||
           !setDeviceLed(device,
-                        buttonStatus != 0 ? colorOrange : colorBlue,
-                        buttonStatus != 0 ? "ORANGE" : "BLUE")) {
+                        buttonStatus != 0
+                            ? (sequence ? colorGreen : colorOrange)
+                            : colorBlue,
+                        buttonStatus != 0
+                            ? (sequence ? "GREEN" : "ORANGE")
+                            : "BLUE")) {
         device.buttonInitialized = false;
         return true;
       }
@@ -236,8 +266,11 @@ bool pollKeys() {
 
     const bool pressed = buttonStatus != 0;
     if (!deviceIdentityMatches(device)) return true;
-    if (!setDeviceLed(device, pressed ? colorOrange : colorBlue,
-                      pressed ? "ORANGE" : "BLUE")) {
+    const bool sequence = sequenceMode(device);
+    if (!setDeviceLed(device,
+                      pressed ? (sequence ? colorGreen : colorOrange)
+                              : colorBlue,
+                      pressed ? (sequence ? "GREEN" : "ORANGE") : "BLUE")) {
       Serial.printf(
           "[ChainOSCnano][CHAIN_KEY] event_discarded id=%u "
           "reason=led_update_failed\n",
@@ -249,7 +282,7 @@ bool pollKeys() {
     Serial.printf("[ChainOSCnano][CHAIN_KEY] id=%u uid=", device.id);
     printUid(device.uid);
     Serial.printf(" state=%s led=%s\n", pressed ? "PRESSED" : "RELEASED",
-                  pressed ? "ORANGE" : "BLUE");
+                  pressed ? (sequence ? "GREEN" : "ORANGE") : "BLUE");
     oscSendKeyEvent(device.uid, UID_SIZE, pressed);
   }
   return false;
@@ -339,6 +372,11 @@ void scanBus() {
       Serial.println();
     }
     saveSnapshot(current, reportedCount);
+    for (uint16_t index = 0; index < previousCount; ++index) {
+      if (previousDevices[index].type == CHAIN_KEY_TYPE_CODE) {
+        keySettingsEnsure(uidString(previousDevices[index].uid));
+      }
+    }
     initializeDevices();
   }
   recordScanSuccess();
@@ -376,4 +414,28 @@ void chainProbeUpdate() {
       scanBus();
     }
   }
+}
+
+size_t chainProbeKeyCount() {
+  size_t count = 0;
+  for (uint16_t index = 0; index < previousCount; ++index)
+    if (previousDevices[index].type == CHAIN_KEY_TYPE_CODE) ++count;
+  return count;
+}
+
+String chainProbeKeyUid(size_t requestedIndex) {
+  size_t keyIndex = 0;
+  for (uint16_t index = 0; index < previousCount; ++index) {
+    if (previousDevices[index].type != CHAIN_KEY_TYPE_CODE) continue;
+    if (keyIndex++ == requestedIndex) return uidString(previousDevices[index].uid);
+  }
+  return String();
+}
+
+bool chainProbeKeyConnected(const String& uid) {
+  for (uint16_t index = 0; index < previousCount; ++index) {
+    if (previousDevices[index].type == CHAIN_KEY_TYPE_CODE &&
+        uidString(previousDevices[index].uid) == uid) return true;
+  }
+  return false;
 }

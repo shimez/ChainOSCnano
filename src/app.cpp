@@ -8,6 +8,7 @@
 #include "nano_hardware.h"
 #include "network_manager.h"
 #include "osc_manager.h"
+#include "key_settings.h"
 
 namespace {
 
@@ -21,6 +22,7 @@ void appSetup() {
   delay(250);
 
   nanoHardwareSetup();
+  keySettingsSetup();
   chainProbeSetup();
   oscSetup();
   networkSetup();
