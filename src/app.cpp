@@ -6,6 +6,7 @@
 #include "config.h"
 #include "diagnostics.h"
 #include "nano_hardware.h"
+#include "network_manager.h"
 
 namespace {
 
@@ -20,10 +21,12 @@ void appSetup() {
 
   nanoHardwareSetup();
   chainProbeSetup();
+  networkSetup();
 }
 
 void appLoop() {
   const unsigned long now = millis();
+  networkUpdate();
   chainProbeUpdate();
 
   if (!bootDiagnosticsPrinted && now >= BOOT_DIAGNOSTICS_DELAY_MS) {
@@ -38,4 +41,3 @@ void appLoop() {
   }
   delay(1);
 }
-

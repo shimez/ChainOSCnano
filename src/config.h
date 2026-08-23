@@ -3,7 +3,7 @@
 #include <Arduino.h>
 
 static constexpr const char* APP_NAME = "ChainOSCnano";
-static constexpr const char* APP_VERSION = "0.2.0";
+static constexpr const char* APP_VERSION = "0.3.0";
 static constexpr uint32_t SERIAL_BAUD = 115200;
 static constexpr unsigned long BOOT_DIAGNOSTICS_DELAY_MS = 5000;
 static constexpr unsigned long HEARTBEAT_INTERVAL_MS = 5000;
@@ -29,3 +29,13 @@ static constexpr unsigned long CHAIN_BUS_RECOVERY_INTERVAL_MS = 5000;
 static constexpr uint8_t CHAIN_BUS_RECOVERY_FAILURES = 2;
 static constexpr uint8_t CHAIN_DEVICE_LED_BRIGHTNESS = 60;
 static constexpr uint16_t CHAIN_MAX_DEVICES = 16;
+
+// Wi-Fi provisioning and local status page.
+static constexpr const char* WIFI_AP_SSID = "ChainOSCnano-Setup";
+static constexpr const char* WIFI_AP_PASSWORD = "12345678";
+static constexpr const char* WIFI_MDNS_HOST = "chainoscnano";
+static constexpr const char* WIFI_PREFS_NAMESPACE = "chainoscnano";
+static constexpr unsigned long WIFI_CONNECT_TIMEOUT_MS = 15000;
+static constexpr unsigned long WIFI_CONNECT_LED_BLINK_MS = 500;
+static constexpr unsigned long NETWORK_RESTART_DELAY_MS = 1200;
+static constexpr uint8_t CAPTIVE_DNS_PORT = 53;

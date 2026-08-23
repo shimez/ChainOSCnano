@@ -6,6 +6,22 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-24
+
+### Added
+
+- Preferencesへ保存したWi-Fi認証情報の読み込みと保存
+- 保存済みWi-Fiへの接続と、起動時接続タイムアウト処理
+- `ChainOSCnano-Setup`によるパスワード付きAP Mode
+- DNSリダイレクトとOS別検出ルートを備えたキャプティブポータル
+- 日本語／英語に対応したWi-Fi設定ページ
+- SSID、パスワード、64桁PSKの入力検証
+- `chainoscnano.local`によるmDNSアクセス
+- Wi-Fi切断後の自動再接続
+- Wi-Fi設定の削除とセットアップモードへの復帰
+- 本体RGB LEDによる接続中・接続済み・AP Modeの状態表示
+- Wi-Fi接続中・再接続中を識別する本体RGB LEDの青色点滅
+
 ## [0.2.0] - 2026-08-24
 
 ### Added
@@ -41,6 +57,7 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 - M5NanoC6内蔵RGB LEDの初期化
 - v0.1.0向けREADME、テスト手順、第三者ライセンス表記
 
-[Unreleased]: https://github.com/shimez/ChainOSCnano/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/shimez/ChainOSCnano/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/shimez/ChainOSCnano/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/shimez/ChainOSCnano/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/shimez/ChainOSCnano/releases/tag/v0.1.0
