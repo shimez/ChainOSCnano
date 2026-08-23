@@ -1,6 +1,6 @@
 # ChainOSCnano テストガイド
 
-この文書は、ChainOSCnano v0.1.0のハードウェア検証手順と確認結果を記録します。
+この文書は、ChainOSCnanoのハードウェア検証手順と確認結果を記録します。
 
 ## ビルドと書き込み
 
@@ -24,7 +24,7 @@ PlatformIOでのビルドと書き込みは、使用するPC環境で別途確�
 
 115200 bpsでシリアルモニターを開き、次の内容を確認します。
 
-- `ChainOSCnano v0.1.0`が表示される
+- `ChainOSCnano v0.2.0`が表示される
 - チップがESP32-C6として表示される
 - Flash容量が4 MBとして表示される
 - PSRAMが0 bytesとして表示される
@@ -49,9 +49,54 @@ PlatformIOでのビルドと書き込みは、使用するPC環境で別途確�
 - 1台から4台まで順番に再接続した際、接続台数とUIDが更新された
 - 長時間動作中も空きヒープは約425 KBで安定していた
 
-## v0.1.0の対象外
+## v0.2.0のテスト手順
 
-- Chainデバイスの入力取得
+1. 複数のChain Keyを接続して起動します。
+2. 各Keyについて`ready`、UID、初期状態が表示されることを確認します。
+3. 離しているKeyのLEDが青色であることを確認します。
+4. Keyを押すと`PRESSED`が表示され、同じKeyのLEDがオレンジ色になることを確認します。
+5. Keyを離すと`RELEASED`が表示され、LEDが青色へ戻ることを確認します。
+6. 複数Keyを交互または同時に操作し、IDとUIDが正しく対応することを確認します。
+7. Keyの抜き差しや接続順変更後も、操作したKeyとログ・LEDが一致することを確認します。
+8. 通信タイムアウトが発生しても、偽の`PRESSED`／`RELEASED`が出力されないことを確認します。
+9. 長時間操作しても空きヒープが継続的に減少しないことを確認します。
+10. 取り外したデバイスを再接続し、M5NanoC6を再起動しなくても再認識されることを確認します。
+
+抜き差し中にUID照合やLED更新が失敗した場合は、次のようにイベントが破棄されます。この直後にデバイス構成が再スキャンされ、偽の`PRESSED`／`RELEASED`は出力されないことを確認してください。
+
+```text
+[ChainOSCnano][CHAIN_KEY] identity_check_failed id=... event_discarded=true
+[ChainOSCnano][CHAIN_KEY] event_discarded id=... reason=led_update_failed
+```
+
+切断状態またはスキャン失敗が続いた場合は、UARTを自動的に再初期化します。再接続したデバイスが、その後のスキャンで認識されることを確認してください。
+
+```text
+[ChainOSCnano][CHAIN] bus_reinitialized reason=disconnected RX=1 TX=2
+```
+
+想定されるログは次の形式です。
+
+```text
+[ChainOSCnano][CHAIN_KEY] ready id=1 uid=... initial=RELEASED led=BLUE
+[ChainOSCnano][CHAIN_KEY] id=1 uid=... state=PRESSED led=ORANGE
+[ChainOSCnano][CHAIN_KEY] id=1 uid=... state=RELEASED led=BLUE
+```
+
+## v0.2.0で確認済みの結果
+
+- Arduino IDEでコンパイルし、M5NanoC6へ書き込めた
+- 4台のChain Keyを同時に監視できた
+- 各Keyの`PRESSED`／`RELEASED`とUIDが正しく対応した
+- 複数Keyの同時押しと、押した順番とは異なる順番での解放を正しく検出した
+- 離しているKeyは青色、押しているKeyはオレンジ色で点灯した
+- 全取り外し、段階的な再接続、接続順変更後も正しいUIDで再認識した
+- 不安定な接続中に検出したUID不一致イベントを破棄できた
+- 切断状態が続いた場合にUARTが自動再初期化され、本体を再起動せず復旧した
+- 動作中の空きヒープは約425 KBで安定し、継続的な減少は見られなかった
+
+## 現時点で未実装
+
 - OSC送信
 - Wi-Fi接続とAP Mode
 - Web UI

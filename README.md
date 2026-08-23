@@ -7,11 +7,11 @@ M5NanoC6とM5Stack Chainデバイスを組み合わせ、コンパクトなOSC�
 
 ## 現在のバージョン
 
-### v0.1.0 — Hardware bring-up
+### v0.2.0 — Chain Key input and LED control
 
-M5NanoC6上で、Chainデバイスを利用するための基礎的なハードウェア検証を行うバージョンです。OSC送信、Wi-Fi設定、Web UI、設定保存はまだ実装されていません。
+v0.1.0のChain列挙機能に加え、複数のChain Keyの入力監視とステータスLED制御を実装したバージョンです。OSC送信、Wi-Fi設定、Web UI、設定保存はまだ実装されていません。
 
-実機で次の項目を確認済みです。
+v0.1.0の実機検証では次の項目を確認済みです。
 
 - GPIO19をHIGHにしてChainデバイスへ給電できる
 - GPIO1／GPIO2のUART（115200 bps）でChainデバイスを検出できる
@@ -20,6 +20,16 @@ M5NanoC6上で、Chainデバイスを利用するための基礎的なハード�
 - Chainデバイスの抜き差しと、1台から4台までの段階的な再接続を検出できる
 - 診断中の空きヒープが約425 KBで安定している
 - 内蔵RGB LEDを初期化できる
+
+v0.2.0では、実機で次の動作を確認済みです。
+
+- 4台のChain Keyについて、押した時／離した時をUID付きで取得できる
+- 複数のChain Keyを同時に操作しても、ID・UID・入力状態が正しく対応する
+- 認識した対応Chainデバイスを青、押しているChain Keyをオレンジで点灯できる
+- 抜き差しや接続順変更後も、UID・入力・LEDの対応を維持できる
+- 不安定な接続中の偽入力を破棄し、通信エラー時に直前の状態を維持する
+- 切断後にUARTを自動復旧し、本体を再起動せず再接続できる
+- 入力監視とUART再初期化を繰り返しても、空きヒープが約425 KBで安定する
 
 ## 対象ハードウェア
 
@@ -74,13 +84,12 @@ pio run -e m5nanoc6 -t upload
 
 ESP32-C6のArduinoフレームワークを利用するため、`platformio.ini`ではpioarduino版のEspressif 32プラットフォームを使用しています。Flash容量はM5NanoC6に合わせて4 MBに設定しています。
 
-## v0.1.0のテスト
+## テスト
 
 確認手順と実機結果は[`docs/TESTING.md`](docs/TESTING.md)を参照してください。
 
 ## 今後の予定
 
-- Chain Keyの入力とLED制御
 - Wi-Fi接続、AP Mode、キャプティブポータル
 - OSC送信
 - ブラウザーによる設定

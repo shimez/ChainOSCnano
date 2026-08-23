@@ -3,7 +3,7 @@
 #include <Arduino.h>
 
 static constexpr const char* APP_NAME = "ChainOSCnano";
-static constexpr const char* APP_VERSION = "0.1.0";
+static constexpr const char* APP_VERSION = "0.2.0";
 static constexpr uint32_t SERIAL_BAUD = 115200;
 static constexpr unsigned long BOOT_DIAGNOSTICS_DELAY_MS = 5000;
 static constexpr unsigned long HEARTBEAT_INTERVAL_MS = 5000;
@@ -24,5 +24,8 @@ static constexpr bool CHAIN_UART_ENABLED = true;
 static constexpr bool RGB_LED_ENABLED = true;
 
 static constexpr unsigned long CHAIN_SCAN_INTERVAL_MS = 2000;
+static constexpr unsigned long CHAIN_KEY_POLL_INTERVAL_MS = 25;
+static constexpr unsigned long CHAIN_BUS_RECOVERY_INTERVAL_MS = 5000;
+static constexpr uint8_t CHAIN_BUS_RECOVERY_FAILURES = 2;
+static constexpr uint8_t CHAIN_DEVICE_LED_BRIGHTNESS = 60;
 static constexpr uint16_t CHAIN_MAX_DEVICES = 16;
-
