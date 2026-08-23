@@ -1,2 +1,96 @@
 # ChainOSCnano
-A compact OSC controller for M5NanoC6 and M5Stack Chain devices.
+
+M5NanoC6とM5Stack Chainデバイスを組み合わせ、コンパクトなOSCコントローラーとして利用することを目指す、個人開発の非公式プロジェクトです。
+
+> [!IMPORTANT]
+> このプロジェクトはM5Stack社の公式製品・公式ファームウェアではありません。
+
+## 現在のバージョン
+
+### v0.1.0 — Hardware bring-up
+
+M5NanoC6上で、Chainデバイスを利用するための基礎的なハードウェア検証を行うバージョンです。OSC送信、Wi-Fi設定、Web UI、設定保存はまだ実装されていません。
+
+実機で次の項目を確認済みです。
+
+- GPIO19をHIGHにしてChainデバイスへ給電できる
+- GPIO1／GPIO2のUART（115200 bps）でChainデバイスを検出できる
+- ChainデバイスのID、種類、UIDを取得できる
+- 4台のChain Keyを同時に認識できる
+- Chainデバイスの抜き差しと、1台から4台までの段階的な再接続を検出できる
+- 診断中の空きヒープが約425 KBで安定している
+- 内蔵RGB LEDを初期化できる
+
+## 対象ハードウェア
+
+- M5NanoC6（ESP32-C6FH4、Flash 4 MB、PSRAMなし）
+- M5Stack Chainデバイス
+- GND／5V／GPIO2／GPIO1を接続する配線または変換基板
+
+## ピン構成
+
+| 用途 | GPIO | 備考 |
+|---|---:|---|
+| Chain RX | GPIO1 | Chain側TXへ接続 |
+| Chain TX | GPIO2 | Chain側RXへ接続 |
+| Chain電源制御 | GPIO19 | HIGHで有効 |
+| 内蔵RGB LED | GPIO20 | 状態表示用 |
+
+設定値は[`src/config.h`](src/config.h)にまとめています。
+
+## シリアル診断
+
+起動時に、チップ情報、Flash容量、ヒープ、PSRAM、Chain電源、UART設定を出力します。動作中は約5秒ごとに空きヒープを出力し、Chainデバイスの構成が変化した場合は一覧を再表示します。
+
+```text
+[ChainOSCnano][CHAIN] state=CONNECTED devices=1
+[ChainOSCnano][CHAIN] index=0 id=1 type=3(Key) uid=...
+[ChainOSCnano][RUN] uptime=5000 ms free_heap=...
+```
+
+## Arduino IDEでビルドする
+
+1. Arduino IDEで`ChainOSCnano.ino`を開きます。
+2. ESP32 Arduino Core 3.xを導入します。
+3. M5ChainとAdafruit NeoPixelをライブラリマネージャーから導入します。
+4. ESP32-C6に対応するボードを選択します。
+5. コンパイルしてM5NanoC6へ書き込みます。
+
+Arduino IDEは`ChainOSCnano.ino`、PlatformIOは`src/main.cpp`をエントリーポイントとして使用し、どちらも`src/app.cpp`の共通実装を呼び出します。
+
+## PlatformIOでビルドする
+
+Visual Studio CodeのPlatformIOでリポジトリのルートディレクトリを開き、次を実行します。
+
+```powershell
+pio run -e m5nanoc6
+```
+
+書き込みは次のコマンドで行えます。
+
+```powershell
+pio run -e m5nanoc6 -t upload
+```
+
+ESP32-C6のArduinoフレームワークを利用するため、`platformio.ini`ではpioarduino版のEspressif 32プラットフォームを使用しています。Flash容量はM5NanoC6に合わせて4 MBに設定しています。
+
+## v0.1.0のテスト
+
+確認手順と実機結果は[`docs/TESTING.md`](docs/TESTING.md)を参照してください。
+
+## 今後の予定
+
+- Chain Keyの入力とLED制御
+- Wi-Fi接続、AP Mode、キャプティブポータル
+- OSC送信
+- ブラウザーによる設定
+- 設定保存とJSON／プリセット互換
+- 対応Chainデバイスの拡大
+
+実装時は、M5ChainOSCおよびChainOSCminiとの設定・プリセット互換性を重視します。
+
+## ライセンス
+
+ChainOSCnano固有のソースコードはMIT Licenseで公開します。依存ライブラリには別のライセンスが適用される場合があります。詳細は[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)および[`licenses/`](licenses/)を参照してください。
+
+Copyright (c) 2026 shimez and contributors

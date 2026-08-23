@@ -1,0 +1,20 @@
+# Build output
+.pio/
+build/
+*.bin
+*.elf
+*.map
+
+# IDE and editor state
+.vscode/
+.idea/
+*.code-workspace
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local test output
+outputs/
+
