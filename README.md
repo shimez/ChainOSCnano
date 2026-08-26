@@ -1,5 +1,9 @@
 # ChainOSCnano
 
+このプロジェクトのソフトウェア、Webサイト、ドキュメントは、OpenAI Codexとの協働により制作されています。
+
+This project's software, website, and documentation are created in collaboration with OpenAI Codex.
+
 M5NanoC6とM5Stack Chainデバイスを組み合わせ、コンパクトなOSCコントローラーとして利用することを目指す、個人開発の非公式プロジェクトです。
 
 > [!IMPORTANT]
