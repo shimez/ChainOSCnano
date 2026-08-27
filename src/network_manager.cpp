@@ -379,9 +379,14 @@ bool jsonMessage(JsonObjectConst object, KeyOscMessage& message, String& error) 
   message.address = object["address"].as<const char*>();
   message.valueStr = object["value"].as<const char*>();
   const int type = object["type"].as<int>();
-  if (type < TYPE_FLOAT || type > TYPE_STRING || message.valueStr.length() > 128 ||
-      !validJsonAddress(message.address, error)) {
-    if (error.isEmpty()) error = tr("OSC message type or value is invalid.", "OSCメッセージの型または値が正しくありません。");
+  if (!validJsonAddress(message.address, error)) return false;
+  if (type < TYPE_FLOAT || type > TYPE_STRING) {
+    error = tr("OSC message type is invalid.", "OSCメッセージの型が正しくありません。");
+    return false;
+  }
+  if (message.valueStr.length() > 128) {
+    error = tr("E_OSC_VALUE_TOO_LONG: OSC Value is too long. Keep it within 128 bytes in UTF-8.",
+               "E_OSC_VALUE_TOO_LONG: OSC Valueが長すぎます。UTF-8で128バイト以内にしてください。");
     return false;
   }
   message.valueType = static_cast<ValueType>(type);
@@ -421,6 +426,17 @@ bool jsonSequence(JsonObjectConst object, KeySequenceConfig& sequence, String& e
       !isfinite(sequence.start) || !isfinite(sequence.end) ||
       !isfinite(sequence.step) || !validJsonAddress(sequence.address, error)) {
     if (error.isEmpty()) error = tr("Sequence values are invalid.", "シーケンスの値が正しくありません。");
+    return false;
+  }
+  if (sequence.step == 0.0f) {
+    error = tr("E_SEQUENCE_STEP_ZERO: Sequence Step must not be zero. Specify a non-zero value that moves from Start toward End.",
+               "E_SEQUENCE_STEP_ZERO: SequenceのStepには0を指定できません。StartからEndへ進む0以外の値を指定してください。");
+    return false;
+  }
+  if ((sequence.start < sequence.end && sequence.step < 0.0f) ||
+      (sequence.start > sequence.end && sequence.step > 0.0f)) {
+    error = tr("E_SEQUENCE_DIRECTION_INVALID: Sequence direction is invalid. Use a positive Step when Start is below End and a negative Step when Start is above End.",
+               "E_SEQUENCE_DIRECTION_INVALID: Sequenceの進行方向が正しくありません。StartがEndより小さい場合は正のStep、大きい場合は負のStepを指定してください。");
     return false;
   }
   sequence.valueType = static_cast<ValueType>(type);
