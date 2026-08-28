@@ -8,8 +8,11 @@
 
 - `ChainOSCnano.ino`を開く
 - ESP32-C6対応ボードを選択する
+- `Tools`→`Partition Scheme`で`Huge APP (3MB No OTA / 1MB SPIFFS)`を選択する
 - コンパイルが成功する
 - M5NanoC6へ書き込める
+
+このPartition Schemeは必須です。1 MBの`SPIFFS`領域をファームウェアからLittleFSとして使用し、デバイス設定を保存します。
 
 ### PlatformIO
 
@@ -24,7 +27,7 @@ PlatformIOでのビルドと書き込みは、使用するPC環境で別途確�
 
 115200 bpsでシリアルモニターを開き、次の内容を確認します。
 
-- `ChainOSCnano v0.7.0`が表示される
+- `ChainOSCnano v0.8.0`が表示される
 - チップがESP32-C6として表示される
 - Flash容量が4 MBとして表示される
 - PSRAMが0 bytesとして表示される

@@ -120,6 +120,52 @@ void logNvsStats(const char* phase) {
   }
 }
 
+void logNamespaceUsage(const char* type, const String& identity,
+                       const String& nameSpace, size_t serializedBytes) {
+#if CHAINOSCNANO_STORAGE_DEBUG
+  constexpr size_t NVS_ENTRY_BYTES = 32;
+  nvs_handle_t handle = 0;
+  const esp_err_t openResult =
+      nvs_open(nameSpace.c_str(), NVS_READONLY, &handle);
+  if (openResult != ESP_OK) {
+    NANO_STORAGE_LOGF(
+        "[ChainOSCnano][STORAGE] type=%s uid=%s ns=%s "
+        "serialized_bytes=%u result=open_failed error=%d\n",
+        type, identity.c_str(), nameSpace.c_str(),
+        static_cast<unsigned>(serializedBytes),
+        static_cast<int>(openResult));
+    return;
+  }
+  size_t entries = 0;
+  const esp_err_t countResult = nvs_get_used_entry_count(handle, &entries);
+  nvs_close(handle);
+  if (countResult != ESP_OK) {
+    NANO_STORAGE_LOGF(
+        "[ChainOSCnano][STORAGE] type=%s uid=%s ns=%s "
+        "serialized_bytes=%u result=count_failed error=%d\n",
+        type, identity.c_str(), nameSpace.c_str(),
+        static_cast<unsigned>(serializedBytes),
+        static_cast<int>(countResult));
+    return;
+  }
+  const size_t namespaceEntries = entries + 1;
+  NANO_STORAGE_LOGF(
+      "[ChainOSCnano][STORAGE] type=%s uid=%s ns=%s "
+      "serialized_bytes=%u data_entries=%u namespace_entries=%u "
+      "entry_bytes_estimate=%u\n",
+      type, identity.c_str(), nameSpace.c_str(),
+      static_cast<unsigned>(serializedBytes),
+      static_cast<unsigned>(entries),
+      static_cast<unsigned>(namespaceEntries),
+      static_cast<unsigned>(namespaceEntries * NVS_ENTRY_BYTES));
+#else
+  (void)type;
+  (void)identity;
+  (void)nameSpace;
+  (void)serializedBytes;
+#endif
+}
+
 bool readBlob(const String& nameSpace, String& blob) {
   Preferences p;
   if (!p.begin(nameSpace.c_str(), true)) {
@@ -182,6 +228,7 @@ bool writeBlob(const String& nameSpace, const char* type,
                     matches ? "ok" : "verify_mismatch",
                     static_cast<unsigned>(ESP.getFreeHeap()));
   logNvsStats(matches ? "after_save" : "verify_mismatch");
+  if (matches) logNamespaceUsage(type, identity, nameSpace, blob.length());
   return matches;
 }
 

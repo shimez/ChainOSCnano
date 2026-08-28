@@ -11,9 +11,9 @@ M5NanoC6とM5Stack Chainデバイスを組み合わせ、コンパクトなOSC�
 
 ## 現在のバージョン
 
-### v0.7.0 — M5NanoC6 button support
+### v0.8.0 — LittleFS device storage
 
-M5NanoC6本体ボタンを内蔵Keyとして利用できるバージョンです。外付けChain Keyと同じPress／Release、複数OSCメッセージ、Sequence、設定保存、デバイスプリセットに対応します。
+デバイス設定の保存先をNVSからLittleFSへ移行したバージョンです。大きなKey設定を安全に保存でき、現行compact NVS設定は初回読込時に自動移行されます。
 
 v0.1.0の実機検証では次の項目を確認済みです。
 
@@ -76,7 +76,10 @@ v0.5.0では次のKey設定機能を追加しています。
 - 0件の場合は該当イベントでOSCを送信しない
 - SequenceのAddress、開始値、終了値、増減量、型、周回動作
 - SequenceモードのKeyを押した時はChain KeyのLEDを緑色で表示
-- UID単位のNVS保存と再起動後の復元
+- UID単位のLittleFS保存と再起動後の復元
+- ChainデバイスはUID全体、本体ボタンは`NanoButton.json`を設定ファイル名として使用
+- 一時ファイルの検証後に置換する安全な保存処理と、現行compact NVS設定からの自動移行
+- 設定ファイルサイズおよびLittleFSの総容量・使用量・空き容量をシリアルログへ出力
 - 保存済みデバイス設定は全種類合計で最大40台
 - 接続中デバイスと保存済み未接続デバイスの分離表示
 - 未接続デバイス設定の削除
@@ -99,6 +102,14 @@ v0.7.0では次の機能を追加しています。
 - 本体ボタン設定の保存・復元とJSONプリセット入出力
 - 本体ボタン押下中とIdentify Device実行中のオレンジLED表示
 - ChainOSCnanoポータル、Web Installer、faviconのアンバー系デザイン
+
+v0.8.0では次の保存機能を追加・変更しています。
+
+- Key、Encoder、Angle、ToF、Joystick設定をLittleFSへ保存
+- ChainデバイスはUID全体、本体ボタンは`NanoButton.json`をファイル名として使用
+- 一時ファイルの検証後に既存設定を置換し、書き込み失敗時も既存設定を維持
+- 現行compact NVS設定からLittleFSへの自動移行
+- 設定ファイルサイズとLittleFSの総容量・使用量・空き容量をシリアルログへ出力
 
 ## ドキュメントとファームウェア
 
@@ -162,8 +173,10 @@ M5NanoC6は2.4 GHz帯のWi-Fiを使用します。設定ページには認証機
 2. ESP32 Arduino Core 3.xを導入します。
 3. M5Chain、Adafruit NeoPixel、ArduinoOSC、ArduinoJsonをライブラリマネージャーから導入します。
 4. ESP32-C6に対応するボードを選択します。
-5. `Tools`→`Partition Scheme`で、3 MB以上のアプリ領域を持つ構成（例：`Huge APP`）を選択します。
+5. `Tools`→`Partition Scheme`で、**`Huge APP (3MB No OTA / 1MB SPIFFS)`**を選択します。
 6. コンパイルしてM5NanoC6へ書き込みます。
+
+`Huge APP (3MB No OTA / 1MB SPIFFS)`は必須です。デバイス設定の保存にLittleFSを使用するため、ファイルシステム領域のないPartition Schemeでは設定を保存・復元できません。Arduino IDE上では領域名が`SPIFFS`と表示されますが、ファームウェアからはLittleFSとして使用します。
 
 Arduino IDEは`ChainOSCnano.ino`、PlatformIOは`src/main.cpp`をエントリーポイントとして使用し、どちらも`src/app.cpp`の共通実装を呼び出します。
 

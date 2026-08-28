@@ -8,7 +8,7 @@ permalink: /en/user-guide/
 
 [日本語版](../../user-guide/)
 
-This guide covers ChainOSCnano v0.7.0 setup and its Web UI.
+This guide covers ChainOSCnano v0.8.0 setup and its Web UI.
 
 > [!IMPORTANT]
 > ChainOSCnano is an unofficial, independently developed project. The Web UI has no authentication, so use it only on a trusted local network.

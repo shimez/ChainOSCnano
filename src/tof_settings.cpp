@@ -6,6 +6,7 @@
 
 #include "logging.h"
 #include "compact_storage.h"
+#include "device_file_storage.h"
 
 namespace {
 constexpr size_t MAX_SETTINGS = 40;
@@ -55,25 +56,32 @@ bool same(const TofSetting& a, const TofSetting& b) {
 }
 bool load(const String& identity, TofSetting& setting, bool& found) {
   found = false;
-  if (compactStorageLoad(compactStorageNamespace(identity), setting)) { found = true; return true; }
+  const DeviceFileLoadResult result = deviceFileStorageLoad(setting);
+  if (result == DeviceFileLoadResult::Loaded) { found = true; return true; }
+  if (result == DeviceFileLoadResult::Error) { found = true; return false; }
+  if (compactStorageLoad(compactStorageNamespace(identity), setting)) {
+    found = true;
+    if (deviceFileStorageSave(setting)) NANO_STORAGE_LOGF("[ChainOSCnano][TOFCFG] migrated identity=%s source=NVS target=LittleFS\n", identity.c_str());
+    return true;
+  }
   return false;
 
 }
 bool write(const TofSetting& s) {
-  const String ns = compactStorageNamespace(s.identity);
-  if (!compactStorageSave(ns, s)) return false;
+  if (!deviceFileStorageSave(s)) return false;
   TofSetting verify = s; bool found = false;
   return load(s.identity, verify, found) && found && same(s, verify);
 }
 void saveKnown() {
-  if (loadingKnown) return;
-  String known;
-  for (size_t i = 0; i < settingCount; ++i) { if (!known.isEmpty()) known += '\n'; known += settings[i].identity; }
-  Preferences p; if (p.begin("tofcfg", false)) { p.putString("known", known); p.end(); }
+  // LittleFS files are the catalog; NVS is migration-only.
 }
 }
 
 void tofSettingsSetup() {
+  deviceFileStorageBegin(); String fileIdentities[MAX_SETTINGS];
+  size_t fileCount=deviceFileStorageList("tof",fileIdentities,MAX_SETTINGS); loadingKnown=true;
+  for(size_t i=0;i<fileCount;++i)if(fileIdentities[i].startsWith("chain:")&&fileIdentities[i].length()>6)tofSettingsEnsure(fileIdentities[i],String("Chain ToF ")+fileIdentities[i].substring(6));
+  loadingKnown=false;
   Preferences p; String known;
   if (p.begin("tofcfg", true)) { known = p.getString("known", ""); p.end(); }
   loadingKnown = true; int offset = 0;
@@ -107,6 +115,7 @@ bool tofSettingsDelete(const String& identity) {
   size_t found = settingCount;
   for (size_t i = 0; i < settingCount; ++i) if (settings[i].identity == identity) { if (settings[i].connectedPortMask) return false; found = i; break; }
   if (found == settingCount) return false;
+  if (!deviceFileStorageRemove("tof", identity)) return false;
   compactStorageDelete(identity);
   for (size_t i = found + 1; i < settingCount; ++i) settings[i - 1] = settings[i];
   --settingCount; settings[settingCount] = TofSetting(); saveKnown(); return true;

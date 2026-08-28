@@ -6,6 +6,7 @@
 
 #include "logging.h"
 #include "compact_storage.h"
+#include "device_file_storage.h"
 
 namespace {
 
@@ -54,14 +55,21 @@ bool sameSetting(const AngleSetting& left, const AngleSetting& right) {
 
 bool loadSetting(const String& identity, AngleSetting& setting, bool& found) {
   found = false;
-  if (compactStorageLoad(compactStorageNamespace(identity), setting)) { found = true; return true; }
+  const DeviceFileLoadResult result = deviceFileStorageLoad(setting);
+  if (result == DeviceFileLoadResult::Loaded) { found = true; return true; }
+  if (result == DeviceFileLoadResult::Error) { found = true; return false; }
+  if (compactStorageLoad(compactStorageNamespace(identity), setting)) {
+    found = true;
+    if (deviceFileStorageSave(setting))
+      NANO_STORAGE_LOGF("[ChainOSCnano][ANGLECFG] migrated identity=%s source=NVS target=LittleFS\n", identity.c_str());
+    return true;
+  }
   return false;
 
 }
 
 bool writeSetting(const AngleSetting& setting) {
-  const String nameSpace = compactStorageNamespace(setting.identity);
-  if (!compactStorageSave(nameSpace, setting)) return false;
+  if (!deviceFileStorageSave(setting)) return false;
   AngleSetting verify = setting;
   bool found = false;
   return loadSetting(setting.identity, verify, found) && found &&
@@ -69,22 +77,20 @@ bool writeSetting(const AngleSetting& setting) {
 }
 
 void saveKnownDevices() {
-  if (loadingKnown) return;
-  String known;
-  for (size_t i = 0; i < settingCount; ++i) {
-    if (!known.isEmpty()) known += '\n';
-    known += settings[i].identity;
-  }
-  Preferences preferences;
-  if (preferences.begin("anglecfg", false)) {
-    preferences.putString("known", known);
-    preferences.end();
-  }
+  // LittleFS files are the catalog; NVS is migration-only.
 }
 
 }  // namespace
 
 void angleSettingsSetup() {
+  deviceFileStorageBegin();
+  String fileIdentities[MAX_ANGLE_SETTINGS];
+  const size_t fileCount = deviceFileStorageList("angle", fileIdentities, MAX_ANGLE_SETTINGS);
+  loadingKnown = true;
+  for (size_t i = 0; i < fileCount; ++i)
+    if (fileIdentities[i].startsWith("chain:") && fileIdentities[i].length() > 6)
+      angleSettingsEnsure(fileIdentities[i], String("Chain Angle ") + fileIdentities[i].substring(6));
+  loadingKnown = false;
   Preferences preferences;
   String known;
   if (preferences.begin("anglecfg", true)) {
@@ -155,6 +161,7 @@ bool angleSettingsDelete(const String& identity) {
     }
   }
   if (found == settingCount) return false;
+  if (!deviceFileStorageRemove("angle", identity)) return false;
   compactStorageDelete(identity);
   for (size_t i = found + 1; i < settingCount; ++i) settings[i - 1] = settings[i];
   --settingCount;

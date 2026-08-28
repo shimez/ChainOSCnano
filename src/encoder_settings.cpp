@@ -6,6 +6,7 @@
 
 #include "logging.h"
 #include "compact_storage.h"
+#include "device_file_storage.h"
 
 namespace {
 
@@ -79,33 +80,38 @@ bool sameSetting(const EncoderSetting& left, const EncoderSetting& right) {
 
 bool loadSetting(const String& identity, EncoderSetting& setting, bool& found) {
   found = false;
-  if (compactStorageLoad(compactStorageNamespace(identity), setting)) { found = true; return true; }
+  const DeviceFileLoadResult result = deviceFileStorageLoad(setting);
+  if (result == DeviceFileLoadResult::Loaded) { found = true; return true; }
+  if (result == DeviceFileLoadResult::Error) { found = true; return false; }
+  if (compactStorageLoad(compactStorageNamespace(identity), setting)) {
+    found = true;
+    if (deviceFileStorageSave(setting))
+      NANO_STORAGE_LOGF("[ChainOSCnano][ENCCFG] migrated identity=%s source=NVS target=LittleFS\n", identity.c_str());
+    return true;
+  }
   return false;
 
 }
 
 bool writeSetting(const EncoderSetting& setting) {
-  const String compactNamespace = compactStorageNamespace(setting.identity);
-  return compactStorageSave(compactNamespace, setting);
+  return deviceFileStorageSave(setting);
 }
 
 void saveKnownDevices() {
-  if (loadingKnown) return;
-  String known;
-  for (size_t i = 0; i < settingCount; ++i) {
-    if (!known.isEmpty()) known += '\n';
-    known += settings[i].identity;
-  }
-  Preferences preferences;
-  if (preferences.begin("enccfg", false)) {
-    preferences.putString("known", known);
-    preferences.end();
-  }
+  // LittleFS files are the catalog; NVS is migration-only.
 }
 
 }  // namespace
 
 void encoderSettingsSetup() {
+  deviceFileStorageBegin();
+  String fileIdentities[MAX_ENCODER_SETTINGS];
+  const size_t fileCount = deviceFileStorageList("encoder", fileIdentities, MAX_ENCODER_SETTINGS);
+  loadingKnown = true;
+  for (size_t i = 0; i < fileCount; ++i)
+    if (fileIdentities[i].startsWith("chain:") && fileIdentities[i].length() > 6)
+      encoderSettingsEnsure(fileIdentities[i], String("Chain Encoder ") + fileIdentities[i].substring(6));
+  loadingKnown = false;
   Preferences preferences;
   String known;
   if (preferences.begin("enccfg", true)) {
@@ -198,6 +204,7 @@ bool encoderSettingsDelete(const String& identity) {
     }
   }
   if (found == settingCount) return false;
+  if (!deviceFileStorageRemove("encoder", identity)) return false;
   compactStorageDelete(identity);
   for (size_t i = found + 1; i < settingCount; ++i)
     settings[i - 1] = settings[i];

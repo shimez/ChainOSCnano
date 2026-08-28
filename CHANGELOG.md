@@ -6,6 +6,25 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-08-29
+
+### Added
+
+- デバイス設定ファイルのサイズとLittleFSの総容量・使用量・空き容量をシリアルログへ出力
+- 一時ファイルのJSON解析とヘッダー検証後に既存設定を置換する安全な保存処理
+
+### Changed
+
+- Key、Encoder、Angle、ToF、Joystickの設定保存先をNVSからLittleFSへ移行
+- ChainデバイスはUID全体、本体ボタンは`NanoButton.json`を設定ファイル名として使用
+- 保存済みデバイスの復元をLittleFS上のファイル一覧から行うよう変更
+- 現行compact NVS設定をLittleFSファイルがない場合に自動移行
+- Arduino IDEでは`Huge APP (3MB No OTA / 1MB SPIFFS)`のPartition Schemeが必須であることをビルド手順とテストガイドへ明記
+
+### Fixed
+
+- NVSの空きentryが残っていても大きなKey設定を書き込めず、既存設定を失う可能性がある問題を解消
+
 ## [0.7.0] - 2026-08-24
 
 ### Added
@@ -116,7 +135,8 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 - M5NanoC6内蔵RGB LEDの初期化
 - v0.1.0向けREADME、テスト手順、第三者ライセンス表記
 
-[Unreleased]: https://github.com/shimez/ChainOSCnano/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/shimez/ChainOSCnano/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/shimez/ChainOSCnano/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/shimez/ChainOSCnano/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/shimez/ChainOSCnano/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/shimez/ChainOSCnano/compare/v0.4.0...v0.5.0

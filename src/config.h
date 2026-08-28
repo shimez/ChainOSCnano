@@ -3,13 +3,13 @@
 #include <stdint.h>
 
 static constexpr const char* APP_NAME = "ChainOSCnano";
-static constexpr const char* APP_VERSION = "0.7.0";
+static constexpr const char* APP_VERSION = "0.8.0";
 static constexpr unsigned long SERIAL_BAUD = 115200;
 static constexpr unsigned long BOOT_DIAGNOSTICS_DELAY_MS = 5000;
 static constexpr unsigned long HEARTBEAT_INTERVAL_MS = 5000;
 
 #define CHAINOSCNANO_WEB_PERF_DEBUG 0
-#define CHAINOSCNANO_STORAGE_DEBUG 0
+#define CHAINOSCNANO_STORAGE_DEBUG 1
 
 static constexpr bool HARDWARE_GPIO_ENABLED = true;
 static constexpr uint8_t LED_DATA_PIN = 20;
