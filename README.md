@@ -11,9 +11,9 @@ M5NanoC6とM5Stack Chainデバイスを組み合わせ、コンパクトなOSC�
 
 ## 現在のバージョン
 
-### v0.8.0 — LittleFS device storage
+### v1.0.0 — Device Preset Import Error Registry v1
 
-デバイス設定の保存先をNVSからLittleFSへ移行したバージョンです。大きなKey設定を安全に保存でき、現行compact NVS設定は初回読込時に自動移行されます。
+Device Preset Import Error Registry v1へ完全対応し、JSON構文、必須項目、JSON型、OSC設定、Sequence、デバイス固有値・範囲、保存失敗のエラーコードと日英メッセージをChainOSCシリーズで統一しました。不正なプリセットは既存設定を変更せず拒否します。
 
 v0.1.0の実機検証では次の項目を確認済みです。
 
@@ -110,6 +110,10 @@ v0.8.0では次の保存機能を追加・変更しています。
 - 一時ファイルの検証後に既存設定を置換し、書き込み失敗時も既存設定を維持
 - 現行compact NVS設定からLittleFSへの自動移行
 - 設定ファイルサイズとLittleFSの総容量・使用量・空き容量をシリアルログへ出力
+
+v1.0.0では次の機能を変更しています。
+
+- Device Preset Import Error Registry v1の全22エラーコードに対応
 
 ## ドキュメントとファームウェア
 

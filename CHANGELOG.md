@@ -6,6 +6,12 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-08-30
+
+### Changed
+
+- Device Preset Import Error Registry v1の全22エラーコードに対応
+
 ## [0.8.0] - 2026-08-29
 
 ### Added
@@ -135,7 +141,8 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 - M5NanoC6内蔵RGB LEDの初期化
 - v0.1.0向けREADME、テスト手順、第三者ライセンス表記
 
-[Unreleased]: https://github.com/shimez/ChainOSCnano/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/shimez/ChainOSCnano/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/shimez/ChainOSCnano/compare/v0.8.0...v1.0.0
 [0.8.0]: https://github.com/shimez/ChainOSCnano/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/shimez/ChainOSCnano/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/shimez/ChainOSCnano/compare/v0.5.0...v0.6.0

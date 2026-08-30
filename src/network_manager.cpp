@@ -150,7 +150,7 @@ function showImportError(status,reason){const message=tx('Import failed. The sel
 async function importSettings(input){const status=document.getElementById('settings-import-status');if(!input.files.length)return;const file=input.files[0];if(file.size>32768){showImportError(status,tx('The JSON file is too large.','JSONファイルが大きすぎます。'));input.value='';return}if(!confirm(tx('Import all settings in this file? Matching device settings will be overwritten.','このファイルの全設定をインポートしますか？同じデバイスの設定は上書きされます。'))){input.value='';return}status.textContent=tx('Importing...','インポート中...');try{const response=await fetch('/import_settings',{method:'POST',headers:{'Content-Type':'application/json'},body:await file.text()});const message=await response.text();if(!response.ok)throw new Error(message);status.textContent=message;setTimeout(()=>location.reload(),800)}catch(error){showImportError(status,error.message)}finally{input.value=''}}
 function chooseDevicePreset(index){document.getElementById('preset-file-'+index).click()}
 async function identifyDevice(index){document.querySelectorAll('.device-menu').forEach(menu=>menu.hidden=true);try{const response=await fetch('/identify_device?index='+index,{method:'POST'});const message=await response.text();if(!response.ok)throw new Error(message)}catch(error){alert(error.message||tx('The device LED could not be changed.','デバイスのLEDを変更できませんでした。'))}}
-async function importDevicePreset(index,input){const status=document.getElementById('preset-status-'+index);if(!input.files.length)return;const file=input.files[0];if(file.size>16384){showImportError(status,tx('The preset file is too large.','プリセットファイルが大きすぎます。'));input.value='';return}if(!confirm(tx('Apply this preset to the selected device? Its settings will be overwritten.','選択したデバイスへこのプリセットを適用しますか？デバイス設定は上書きされます。'))){input.value='';return}status.textContent=tx('Importing preset...','プリセットをインポート中...');try{const response=await fetch('/import_device_preset?index='+index,{method:'POST',headers:{'Content-Type':'application/json'},body:await file.text()});const message=await response.text();if(!response.ok)throw new Error(message);status.textContent=message;setTimeout(()=>location.reload(),700)}catch(error){showImportError(status,error.message)}finally{input.value=''}}
+async function importDevicePreset(index,input){const status=document.getElementById('preset-status-'+index);if(!input.files.length)return;const file=input.files[0];if(file.size>16384){showImportError(status,tx('E_PRESET_FILE_TOO_LARGE: The preset file exceeds 16 KiB. Select a Device Preset JSON file no larger than 16 KiB.','E_PRESET_FILE_TOO_LARGE: プリセットファイルが16 KiBを超えています。16 KiB以内のDevice Preset JSONファイルを選択してください。'));input.value='';return}if(!confirm(tx('Apply this preset to the selected device? Its settings will be overwritten.','選択したデバイスへこのプリセットを適用しますか？デバイス設定は上書きされます。'))){input.value='';return}status.textContent=tx('Importing preset...','プリセットをインポート中...');try{const response=await fetch('/import_device_preset?index='+index,{method:'POST',headers:{'Content-Type':'application/json'},body:await file.text()});const message=await response.text();if(!response.ok)throw new Error(message);status.textContent=message;setTimeout(()=>location.reload(),700)}catch(error){showImportError(status,error.message)}finally{input.value=''}}
 function toggleDevice(index,key){const body=document.getElementById('device-body-'+index);const button=document.getElementById('collapse-'+index);const collapsed=!body.hidden;body.hidden=collapsed;button.classList.toggle('collapsed',collapsed);button.setAttribute('aria-expanded',collapsed?'false':'true');sessionStorage.setItem('chainoscnano-collapse-'+key,collapsed?'1':'0')}
 function toggleKeyMode(prId,sqId,select){document.getElementById(prId).style.display=select.value==='1'?'none':'block';document.getElementById(sqId).style.display=select.value==='1'?'block':'none'}
 function updateEncoderMode(select){const card=select.closest('.encoder-rotation'),show=select.value==='0';if(card)card.querySelectorAll('.encoder-absolute-setting').forEach(item=>item.classList.toggle('encoder-mode-hidden',!show))}
@@ -353,21 +353,313 @@ String joystickSettingJson(const JoystickSetting& setting, bool includeIdentity)
   return output;
 }
 
+bool presetError(String& error, const char* english, const char* japanese) {
+  error = tr(english, japanese);
+  return false;
+}
+
+bool presetRequiredFieldMissing(String& error) {
+  return presetError(error,
+      "E_PRESET_REQUIRED_FIELD_MISSING: A required preset field is missing. Use a file that contains all fields required by Device Preset v1.",
+      "E_PRESET_REQUIRED_FIELD_MISSING: プリセットに必須項目がありません。Device Preset v1の必須項目を含むファイルを使用してください。");
+}
+
+bool presetFieldTypeInvalid(String& error) {
+  return presetError(error,
+      "E_PRESET_FIELD_TYPE_INVALID: A preset field has an invalid JSON type. Use the JSON type defined by Device Preset v1.",
+      "E_PRESET_FIELD_TYPE_INVALID: プリセット項目の型が正しくありません。Device Preset v1で定義されたJSON型を使用してください。");
+}
+
+bool oscTypeInvalid(String& error) {
+  return presetError(error,
+      "E_OSC_TYPE_INVALID: OSC Type is invalid. Select Float, Int, or String as allowed for this field.",
+      "E_OSC_TYPE_INVALID: OSC Typeが正しくありません。この項目で使用できるFloat、Int、Stringのいずれかを指定してください。");
+}
+
+bool presetDeviceSettingInvalid(String& error) {
+  return presetError(error,
+      "E_PRESET_DEVICE_SETTING_INVALID: A device setting is invalid. Check the allowed value range and type for the target device.",
+      "E_PRESET_DEVICE_SETTING_INVALID: デバイス設定値が正しくありません。対象デバイスで使用できる値の範囲と型を確認してください。");
+}
+
+bool hasPresetFields(JsonObjectConst object, const char* const* fields,
+                     size_t count, String& error) {
+  for (size_t index = 0; index < count; ++index)
+    if (!object.containsKey(fields[index])) return presetRequiredFieldMissing(error);
+  return true;
+}
+
 bool validJsonAddress(String address, String& error) {
   address.trim();
-  if (address.isEmpty() || address.length() > 192 || address[0] != '/') {
-    error = tr("OSC Address must start with / and be at most 192 bytes.", "OSC Addressは / から始め、192バイト以内にしてください。");
-    return false;
-  }
+  if (address.length() > 192)
+    return presetError(error,
+        "E_OSC_ADDRESS_TOO_LONG: OSC Address is too long. Keep it within 192 bytes in UTF-8.",
+        "E_OSC_ADDRESS_TOO_LONG: OSC Addressが長すぎます。UTF-8で192バイト以内にしてください。");
+  if (address.isEmpty() || address[0] != '/')
+    return presetError(error,
+        "E_OSC_ADDRESS_INVALID: OSC Address must start with `/` and must not contain whitespace or `# * , ? [ ] { }`.",
+        "E_OSC_ADDRESS_INVALID: OSC Addressは「/」から始め、空白および`# * , ? [ ] { }`を含めないでください。");
   for (size_t index = 0; index < address.length(); ++index) {
     const char c = address[index];
     if (isspace(static_cast<unsigned char>(c)) || c == '#' || c == '*' ||
         c == ',' || c == '?' || c == '[' || c == ']' || c == '{' || c == '}') {
-      error = tr("OSC Address contains an invalid character.", "OSC Addressに使用できない文字が含まれています。");
-      return false;
+      return presetError(error,
+          "E_OSC_ADDRESS_INVALID: OSC Address must start with `/` and must not contain whitespace or `# * , ? [ ] { }`.",
+          "E_OSC_ADDRESS_INVALID: OSC Addressは「/」から始め、空白および`# * , ? [ ] { }`を含めないでください。");
     }
   }
   return true;
+}
+
+bool validatePresetMessage(JsonObjectConst object, String& error) {
+  if (object.isNull()) return presetFieldTypeInvalid(error);
+  static const char* const required[] = {"address", "value", "type"};
+  if (!hasPresetFields(object, required, 3, error)) return false;
+  if (!object["address"].is<const char*>() || !object["value"].is<const char*>() ||
+      !object["type"].is<int>()) return presetFieldTypeInvalid(error);
+  String address = object["address"].as<const char*>();
+  if (!validJsonAddress(address, error)) return false;
+  String value = object["value"].as<const char*>();
+  if (value.length() > 128)
+    return presetError(error,
+        "E_OSC_VALUE_TOO_LONG: OSC Value is too long. Keep it within 128 bytes in UTF-8.",
+        "E_OSC_VALUE_TOO_LONG: OSC Valueが長すぎます。UTF-8で128バイト以内にしてください。");
+  const int type = object["type"].as<int>();
+  if (type < TYPE_FLOAT || type > TYPE_STRING) return oscTypeInvalid(error);
+  if (type == TYPE_FLOAT) {
+    char* end = nullptr;
+    const float parsed = strtof(value.c_str(), &end);
+    if (!end || end == value.c_str() || *end != '\0' || !isfinite(parsed))
+      return presetError(error,
+          "E_OSC_FLOAT32_INVALID: The Float value is invalid. Specify a decimal number representable as a finite OSC float32.",
+          "E_OSC_FLOAT32_INVALID: Float値が正しくありません。有限のOSC float32として表現できる10進数を指定してください。");
+  } else if (type == TYPE_INT) {
+    errno = 0;
+    char* end = nullptr;
+    const long parsed = strtol(value.c_str(), &end, 10);
+    if (!end || end == value.c_str() || *end != '\0' || errno == ERANGE ||
+        parsed < INT32_MIN || parsed > INT32_MAX)
+      return presetError(error,
+          "E_OSC_INT32_INVALID: The Int value is invalid. Specify a decimal integer from `-2147483648` to `2147483647`.",
+          "E_OSC_INT32_INVALID: Int値が正しくありません。`-2147483648`～`2147483647`の範囲の10進整数を指定してください。");
+  }
+  return true;
+}
+
+bool validatePresetMessages(JsonVariantConst pressValue,
+                            JsonVariantConst releaseValue, String& error) {
+  if (!pressValue.is<JsonArrayConst>() || !releaseValue.is<JsonArrayConst>())
+    return presetFieldTypeInvalid(error);
+  JsonArrayConst press = pressValue.as<JsonArrayConst>();
+  JsonArrayConst release = releaseValue.as<JsonArrayConst>();
+  if (press.size() + release.size() > MAX_KEY_OSC_MESSAGES)
+    return presetError(error,
+        "E_OSC_MESSAGE_COUNT_EXCEEDED: Press and Release OSC messages must total 8 or fewer.",
+        "E_OSC_MESSAGE_COUNT_EXCEEDED: PressとReleaseのOSCメッセージは、合計8件以内にしてください。");
+  for (JsonVariantConst item : press) {
+    if (!item.is<JsonObjectConst>()) return presetFieldTypeInvalid(error);
+    if (!validatePresetMessage(item.as<JsonObjectConst>(), error)) return false;
+  }
+  for (JsonVariantConst item : release) {
+    if (!item.is<JsonObjectConst>()) return presetFieldTypeInvalid(error);
+    if (!validatePresetMessage(item.as<JsonObjectConst>(), error)) return false;
+  }
+  return true;
+}
+
+bool validatePresetSequence(JsonObjectConst object, bool legacy,
+                            String& error) {
+  if (object.isNull()) return presetFieldTypeInvalid(error);
+  static const char* const required[] = {"address", "type", "start", "end", "step"};
+  if (!hasPresetFields(object, required, 5, error))
+    return presetError(error,
+        "E_SEQUENCE_REQUIRED_FIELD_MISSING: A required Sequence field is missing. Specify Address, Type, Start, End, and Step.",
+        "E_SEQUENCE_REQUIRED_FIELD_MISSING: Sequenceに必須項目がありません。Address、Type、Start、End、Stepをすべて指定してください。");
+  if (!object["address"].is<const char*>() || !object["type"].is<int>() ||
+      !object["start"].is<float>() || !object["end"].is<float>() ||
+      !object["step"].is<float>()) return presetFieldTypeInvalid(error);
+  String address = object["address"].as<const char*>();
+  if (!validJsonAddress(address, error)) return false;
+  const int type = object["type"].as<int>();
+  if ((type < TYPE_FLOAT || type > TYPE_STRING) && !legacy)
+    return oscTypeInvalid(error);
+  const float start = object["start"].as<float>();
+  const float end = object["end"].as<float>();
+  const float step = object["step"].as<float>();
+  if (!isfinite(start) || !isfinite(end) || !isfinite(step))
+    return presetError(error,
+        "E_SEQUENCE_VALUE_INVALID: A Sequence number is invalid. Specify finite numbers for Start, End, and Step.",
+        "E_SEQUENCE_VALUE_INVALID: Sequenceの数値が正しくありません。Start、End、Stepには有限の数値を指定してください。");
+  if (step == 0.0f)
+    return presetError(error,
+        "E_SEQUENCE_STEP_ZERO: Sequence Step must not be zero. Specify a non-zero value that moves from Start toward End.",
+        "E_SEQUENCE_STEP_ZERO: SequenceのStepには0を指定できません。StartからEndへ進む0以外の値を指定してください。");
+  if ((start < end && step < 0.0f) || (start > end && step > 0.0f))
+    return presetError(error,
+        "E_SEQUENCE_DIRECTION_INVALID: Sequence direction is invalid. Use a positive Step when Start is below End and a negative Step when Start is above End.",
+        "E_SEQUENCE_DIRECTION_INVALID: Sequenceの進行方向が正しくありません。StartがEndより小さい場合は正のStep、大きい場合は負のStepを指定してください。");
+  return true;
+}
+
+bool validatePresetRange(JsonObjectConst range, bool numericOnly, bool legacy,
+                         String& error) {
+  if (range.isNull()) return presetFieldTypeInvalid(error);
+  static const char* const required[] = {"outMin", "outMax", "type"};
+  if (!hasPresetFields(range, required, 3, error)) return false;
+  if (!range["outMin"].is<float>() || !range["outMax"].is<float>() ||
+      !range["type"].is<int>()) return presetFieldTypeInvalid(error);
+  const int type = range["type"].as<int>();
+  if (type < TYPE_FLOAT || type > TYPE_STRING) return oscTypeInvalid(error);
+  if (numericOnly && type == TYPE_STRING && !legacy) return oscTypeInvalid(error);
+  if (!isfinite(range["outMin"].as<float>()) ||
+      !isfinite(range["outMax"].as<float>()))
+    return presetDeviceSettingInvalid(error);
+  return true;
+}
+
+bool validateDevicePreset(JsonObjectConst root, int deviceType, bool legacy,
+                          String& error) {
+  if (!root.containsKey("deviceTypeName")) return presetRequiredFieldMissing(error);
+  if (!root["deviceTypeName"].is<const char*>()) return presetFieldTypeInvalid(error);
+
+  if (deviceType == CHAIN_KEY_DEVICE_TYPE) {
+    if (!root.containsKey("key")) return presetRequiredFieldMissing(error);
+    JsonObjectConst key = root["key"].as<JsonObjectConst>();
+    if (key.isNull()) return presetFieldTypeInvalid(error);
+    static const char* const required[] = {"mode", "press", "release", "sequence"};
+    if (!hasPresetFields(key, required, 4, error)) return false;
+    if (!key["mode"].is<int>() || !key["press"].is<JsonArrayConst>() ||
+        !key["release"].is<JsonArrayConst>() ||
+        !key["sequence"].is<JsonObjectConst>()) return presetFieldTypeInvalid(error);
+    const int mode = key["mode"].as<int>();
+    if (mode < MODE_PRESS_RELEASE || mode > MODE_SEQUENCE)
+      return presetDeviceSettingInvalid(error);
+    return validatePresetMessages(key["press"], key["release"], error) &&
+           validatePresetSequence(key["sequence"].as<JsonObjectConst>(), legacy, error);
+  }
+
+  if (deviceType == CHAIN_ENCODER_DEVICE_TYPE) {
+    if (!root.containsKey("encoder")) return presetRequiredFieldMissing(error);
+    JsonObjectConst encoder = root["encoder"].as<JsonObjectConst>();
+    if (encoder.isNull()) return presetFieldTypeInvalid(error);
+    static const char* const required[] = {
+        "rotationAddress", "sendIncrement", "absoluteInputMin",
+        "absoluteInputMax", "incrementScale", "range", "clickMode",
+        "press", "release", "sequence"};
+    if (!hasPresetFields(encoder, required, 10, error)) return false;
+    if (!encoder["rotationAddress"].is<const char*>() ||
+        !encoder["sendIncrement"].is<bool>() ||
+        !encoder["absoluteInputMin"].is<float>() ||
+        !encoder["absoluteInputMax"].is<float>() ||
+        !encoder["incrementScale"].is<float>() ||
+        !encoder["range"].is<JsonObjectConst>() ||
+        !encoder["clickMode"].is<int>() ||
+        !encoder["press"].is<JsonArrayConst>() ||
+        !encoder["release"].is<JsonArrayConst>() ||
+        !encoder["sequence"].is<JsonObjectConst>()) return presetFieldTypeInvalid(error);
+    String address = encoder["rotationAddress"].as<const char*>();
+    if (!validJsonAddress(address, error)) return false;
+    if (!isfinite(encoder["absoluteInputMin"].as<float>()) ||
+        !isfinite(encoder["absoluteInputMax"].as<float>()) ||
+        !isfinite(encoder["incrementScale"].as<float>()))
+      return presetDeviceSettingInvalid(error);
+    const int mode = encoder["clickMode"].as<int>();
+    if (mode < MODE_PRESS_RELEASE || mode > MODE_SEQUENCE)
+      return presetDeviceSettingInvalid(error);
+    return validatePresetRange(encoder["range"].as<JsonObjectConst>(), false,
+                               legacy, error) &&
+           validatePresetMessages(encoder["press"], encoder["release"], error) &&
+           validatePresetSequence(encoder["sequence"].as<JsonObjectConst>(), legacy,
+                                  error);
+  }
+
+  if (deviceType == CHAIN_ANGLE_DEVICE_TYPE) {
+    if (!root.containsKey("angle")) return presetRequiredFieldMissing(error);
+    JsonObjectConst angle = root["angle"].as<JsonObjectConst>();
+    if (angle.isNull()) return presetFieldTypeInvalid(error);
+    static const char* const required[] = {"address", "use12bit", "deadband", "range"};
+    if (!hasPresetFields(angle, required, 4, error)) return false;
+    if (!angle["address"].is<const char*>() || !angle["use12bit"].is<bool>() ||
+        !angle["deadband"].is<int>() || !angle["range"].is<JsonObjectConst>())
+      return presetFieldTypeInvalid(error);
+    String address = angle["address"].as<const char*>();
+    if (!validJsonAddress(address, error)) return false;
+    if (angle["deadband"].as<int>() < 1) return presetDeviceSettingInvalid(error);
+    return validatePresetRange(angle["range"].as<JsonObjectConst>(), false,
+                               legacy, error);
+  }
+
+  if (deviceType == CHAIN_JOYSTICK_DEVICE_TYPE) {
+    if (!root.containsKey("joystick")) return presetRequiredFieldMissing(error);
+    JsonObjectConst joystick = root["joystick"].as<JsonObjectConst>();
+    if (joystick.isNull()) return presetFieldTypeInvalid(error);
+    static const char* const required[] = {
+        "xAddress", "yAddress", "deadband", "invertX", "invertY", "range",
+        "clickMode", "press", "release", "sequence"};
+    if (!hasPresetFields(joystick, required, 10, error)) return false;
+    if (!joystick["xAddress"].is<const char*>() ||
+        !joystick["yAddress"].is<const char*>() ||
+        !joystick["deadband"].is<int>() || !joystick["invertX"].is<bool>() ||
+        !joystick["invertY"].is<bool>() ||
+        !joystick["range"].is<JsonObjectConst>() ||
+        !joystick["clickMode"].is<int>() ||
+        !joystick["press"].is<JsonArrayConst>() ||
+        !joystick["release"].is<JsonArrayConst>() ||
+        !joystick["sequence"].is<JsonObjectConst>()) return presetFieldTypeInvalid(error);
+    String xAddress = joystick["xAddress"].as<const char*>();
+    String yAddress = joystick["yAddress"].as<const char*>();
+    if (!validJsonAddress(xAddress, error) || !validJsonAddress(yAddress, error))
+      return false;
+    const int deadband = joystick["deadband"].as<int>();
+    const int mode = joystick["clickMode"].as<int>();
+    if (deadband < 1 || deadband > 254 || mode < MODE_PRESS_RELEASE ||
+        mode > MODE_SEQUENCE) return presetDeviceSettingInvalid(error);
+    return validatePresetRange(joystick["range"].as<JsonObjectConst>(), false,
+                               legacy, error) &&
+           validatePresetMessages(joystick["press"], joystick["release"], error) &&
+           validatePresetSequence(joystick["sequence"].as<JsonObjectConst>(), legacy,
+                                  error);
+  }
+
+  if (deviceType == CHAIN_TOF_DEVICE_TYPE) {
+    if (!root.containsKey("tof")) return presetRequiredFieldMissing(error);
+    JsonObjectConst tof = root["tof"].as<JsonObjectConst>();
+    if (tof.isNull()) return presetFieldTypeInvalid(error);
+    static const char* const required[] = {
+        "address", "deadband", "maxDistanceMm", "nearValueHigh", "range"};
+    if (!hasPresetFields(tof, required, 5, error)) return false;
+    if (!tof["address"].is<const char*>() || !tof["deadband"].is<int>() ||
+        !tof["maxDistanceMm"].is<int>() || !tof["nearValueHigh"].is<bool>() ||
+        !tof["range"].is<JsonObjectConst>()) return presetFieldTypeInvalid(error);
+    String address = tof["address"].as<const char*>();
+    if (!validJsonAddress(address, error)) return false;
+    const int deadband = tof["deadband"].as<int>();
+    const int maxDistance = tof["maxDistanceMm"].as<int>();
+    if (deadband < 1 || deadband > 2000 || maxDistance < 31 || maxDistance > 2000)
+      return presetDeviceSettingInvalid(error);
+    return validatePresetRange(tof["range"].as<JsonObjectConst>(), true, legacy,
+                               error);
+  }
+  return false;
+}
+
+void normalizeLegacyPresetTypes(JsonObject root, int deviceType) {
+  if (deviceType == CHAIN_KEY_DEVICE_TYPE) {
+    JsonObject sequence = root["key"]["sequence"].as<JsonObject>();
+    const int type = sequence["type"] | TYPE_FLOAT;
+    if (type < TYPE_FLOAT || type > TYPE_STRING) sequence["type"] = TYPE_FLOAT;
+  } else if (deviceType == CHAIN_ENCODER_DEVICE_TYPE) {
+    JsonObject sequence = root["encoder"]["sequence"].as<JsonObject>();
+    const int type = sequence["type"] | TYPE_FLOAT;
+    if (type < TYPE_FLOAT || type > TYPE_STRING) sequence["type"] = TYPE_FLOAT;
+  } else if (deviceType == CHAIN_JOYSTICK_DEVICE_TYPE) {
+    JsonObject sequence = root["joystick"]["sequence"].as<JsonObject>();
+    const int type = sequence["type"] | TYPE_FLOAT;
+    if (type < TYPE_FLOAT || type > TYPE_STRING) sequence["type"] = TYPE_FLOAT;
+  } else if (deviceType == CHAIN_TOF_DEVICE_TYPE) {
+    JsonObject range = root["tof"]["range"].as<JsonObject>();
+    if ((range["type"] | TYPE_FLOAT) == TYPE_STRING) range["type"] = TYPE_FLOAT;
+  }
 }
 
 bool jsonMessage(JsonObjectConst object, KeyOscMessage& message, String& error) {
@@ -660,7 +952,7 @@ bool joystickSettingFromJson(JsonObjectConst object, JoystickSetting& candidate,
 
 void sendProvisioningPage(const String& message = String()) {
   String html = pageStart("ChainOSCnano Wi-Fi Setup");
-  html += F("<h1>Chain OSC Setting</h1><div class='card language-row'><h2>");
+  html += F("<h1>ChainOSCnano Settings</h1><div class='card language-row'><h2>");
   html += tr("Language", "言語");
   html += F("</h2><form action='/set_language' method='post'><select name='language' onchange='this.form.submit()'><option value='en'");
   if (!isJapaneseUi()) html += F(" selected");
@@ -1026,8 +1318,8 @@ void sendStatusPage(const String& message = String()) {
   const uint32_t requestStartedMs = millis();
   logWebPerf(requestId, requestStartedMs, "BEGIN", 0, 0, 0);
 #endif
-  String html = pageStart("ChainOSCnano");
-  html += F("<div id='save-toast' class='toast' hidden></div><h1>Chain OSC Setting</h1>");
+  String html = pageStart("ChainOSCnano Settings");
+  html += F("<div id='save-toast' class='toast' hidden></div><h1>ChainOSCnano Settings</h1>");
   html += F("<div class='card language-row'><h2>"); html += tr("Language", "言語");
   html += F("</h2><form action='/set_language' method='post'><select name='language' onchange='this.form.submit()'><option value='en'");
   if (!isJapaneseUi()) html += F(" selected");
@@ -1726,11 +2018,15 @@ void handleImportDevicePreset() {
   }
   String body = server.arg("plain");
   if (body.isEmpty()) {
-    server.send(400, "text/plain; charset=utf-8", tr("Preset file is empty.", "プリセットファイルが空です。"));
+    server.send(400, "text/plain; charset=utf-8",
+                tr("E_PRESET_FILE_EMPTY: The preset file is empty. Select a Device Preset JSON file that contains data.",
+                   "E_PRESET_FILE_EMPTY: プリセットファイルが空です。内容を含むDevice Preset JSONファイルを選択してください。"));
     return;
   }
   if (body.length() > MAX_PRESET_BYTES) {
-    server.send(413, "text/plain; charset=utf-8", tr("Preset file exceeds 16 KiB.", "プリセットファイルが16 KiBを超えています。"));
+    server.send(413, "text/plain; charset=utf-8",
+                tr("E_PRESET_FILE_TOO_LARGE: The preset file exceeds 16 KiB. Select a Device Preset JSON file no larger than 16 KiB.",
+                   "E_PRESET_FILE_TOO_LARGE: プリセットファイルが16 KiBを超えています。16 KiB以内のDevice Preset JSONファイルを選択してください。"));
     return;
   }
   // Parse the mutable String buffer in zero-copy mode. Keep body alive until
@@ -1739,7 +2035,10 @@ void handleImportDevicePreset() {
   const DeserializationError parseError =
       deserializeJson(document, body.begin(), body.length());
   if (parseError) {
-    server.send(400, "text/plain; charset=utf-8", String(tr("Invalid JSON: ", "JSONが正しくありません: ")) + parseError.c_str());
+    server.send(400, "text/plain; charset=utf-8",
+                String(tr("E_PRESET_JSON_MALFORMED: The JSON syntax is invalid. Check brackets, quotation marks, commas, and other JSON syntax.",
+                          "E_PRESET_JSON_MALFORMED: JSONの構文が正しくありません。括弧、引用符、カンマなどを確認してください。")) +
+                    " (" + parseError.c_str() + ")");
     return;
   }
   JsonObjectConst root = document.as<JsonObjectConst>();
@@ -1747,15 +2046,50 @@ void handleImportDevicePreset() {
                             ? String(root["format"].as<const char*>()) : String();
   if (root.isNull() || (format != DEVICE_PRESET_FORMAT_NAME &&
                         format != LEGACY_DEVICE_PRESET_FORMAT_NAME)) {
-    server.send(400, "text/plain; charset=utf-8", tr("This is not a supported ChainOSC device preset.", "対応するChainOSCデバイスプリセットではありません。"));
+    server.send(400, "text/plain; charset=utf-8",
+                tr("E_PRESET_FORMAT_INVALID: This is not a supported ChainOSC Device Preset. Confirm that `format` is `ChainOSC-device-preset`.",
+                   "E_PRESET_FORMAT_INVALID: 対応するChainOSC Device Presetではありません。`format`が`ChainOSC-device-preset`であることを確認してください。"));
     return;
   }
   if (!root["schemaVersion"].is<int>() ||
       root["schemaVersion"].as<int>() != DEVICE_PRESET_SCHEMA_VERSION) {
-    server.send(400, "text/plain; charset=utf-8", tr("Unsupported or missing preset schemaVersion.", "プリセットのschemaVersionがないか、対応していません。"));
+    server.send(400, "text/plain; charset=utf-8",
+                tr("E_PRESET_SCHEMA_UNSUPPORTED: The preset `schemaVersion` is missing or unsupported. Use a preset exported by a compatible product version.",
+                   "E_PRESET_SCHEMA_UNSUPPORTED: プリセットの`schemaVersion`がないか、対応していません。対応するバージョンの製品からエクスポートしたプリセットを使用してください。"));
     return;
   }
+  const bool supportedType = root["deviceType"].is<int>() &&
+      (root["deviceType"].as<int>() == CHAIN_KEY_DEVICE_TYPE ||
+       root["deviceType"].as<int>() == CHAIN_ENCODER_DEVICE_TYPE ||
+       root["deviceType"].as<int>() == CHAIN_ANGLE_DEVICE_TYPE ||
+       root["deviceType"].as<int>() == CHAIN_JOYSTICK_DEVICE_TYPE ||
+       root["deviceType"].as<int>() == CHAIN_TOF_DEVICE_TYPE);
+  if (!supportedType) {
+    server.send(400, "text/plain; charset=utf-8",
+                tr("E_PRESET_DEVICE_TYPE_UNSUPPORTED: The preset device type is missing or unsupported. Use a preset for a supported ChainOSC device.",
+                   "E_PRESET_DEVICE_TYPE_UNSUPPORTED: プリセットのデバイス種類がないか、対応していません。対応するChainOSCデバイスのプリセットを使用してください。"));
+    return;
+  }
+  const int selectedType = selected.encoder ? CHAIN_ENCODER_DEVICE_TYPE
+      : selected.angle ? CHAIN_ANGLE_DEVICE_TYPE
+      : selected.tof ? CHAIN_TOF_DEVICE_TYPE
+      : selected.joystick ? CHAIN_JOYSTICK_DEVICE_TYPE
+      : CHAIN_KEY_DEVICE_TYPE;
+  const int presetType = root["deviceType"].as<int>();
+  if (presetType != selectedType) {
+    server.send(400, "text/plain; charset=utf-8",
+                tr("E_PRESET_DEVICE_TYPE_MISMATCH: The preset device type does not match the import target. Select a preset for the same device type.",
+                   "E_PRESET_DEVICE_TYPE_MISMATCH: プリセットのデバイス種類がインポート先と一致しません。選択したデバイスと同じ種類のプリセットを使用してください。"));
+    return;
+  }
+  const bool legacyPreset = format == LEGACY_DEVICE_PRESET_FORMAT_NAME;
   String error;
+  if (!validateDevicePreset(root, presetType, legacyPreset, error)) {
+    server.send(400, "text/plain; charset=utf-8",
+                String(tr("Invalid preset: ", "プリセットが正しくありません: ")) + error);
+    return;
+  }
+  if (legacyPreset) normalizeLegacyPresetTypes(document.as<JsonObject>(), presetType);
   bool saved = false;
   if (selected.encoder) {
     EncoderSetting candidate = *selected.encoder;
@@ -1787,7 +2121,9 @@ void handleImportDevicePreset() {
     saved = keySettingsSave(candidate);
   }
   if (!saved) {
-    server.send(507, "text/plain; charset=utf-8", tr("The preset could not be written to storage.", "プリセットをストレージへ書き込めませんでした。"));
+    server.send(507, "text/plain; charset=utf-8",
+                tr("E_PRESET_STORAGE_WRITE_FAILED: The preset could not be written to storage. Existing settings were not changed. Check available storage and try again.",
+                   "E_PRESET_STORAGE_WRITE_FAILED: プリセットをストレージへ書き込めませんでした。既存の設定は変更されていません。空き容量を確認してから再試行してください。"));
     return;
   }
   server.send(200, "text/plain; charset=utf-8", selected.encoder
@@ -2189,7 +2525,7 @@ void handleSaveWifi() {
                 static_cast<unsigned int>(ssid.length()),
                 static_cast<unsigned int>(password.length()));
   String html = pageStart("Wi-Fi Saved");
-  html += F("<h1>Chain OSC Setting</h1><div class='card'><h2>"); html += tr("Wi-Fi settings saved", "Wi-Fi設定を保存しました");
+  html += F("<h1>ChainOSCnano Settings</h1><div class='card'><h2>"); html += tr("Wi-Fi settings saved", "Wi-Fi設定を保存しました");
   html += F("</h2><p class='status'>"); html += tr("Restarting ChainOSCnano…", "ChainOSCnanoを再起動します…"); html += F("</p></div>");
   sendPage(html);
   scheduleRestart();
@@ -2209,7 +2545,7 @@ void handleForgetWifi() {
   NANO_VERBOSE_LOGF("[ChainOSCnano][NET] credentials_cleared=%s\n",
                 cleared ? "true" : "false");
   String html = pageStart("Wi-Fi Settings Deleted");
-  html += F("<h1>Chain OSC Setting</h1><div class='card'><h2>"); html += tr("Wi-Fi settings deleted", "Wi-Fi設定を削除しました");
+  html += F("<h1>ChainOSCnano Settings</h1><div class='card'><h2>"); html += tr("Wi-Fi settings deleted", "Wi-Fi設定を削除しました");
   html += F("</h2><p class='status'>"); html += tr("Restarting in setup mode…", "設定モードで再起動します…"); html += F("</p></div>");
   sendPage(html);
   scheduleRestart();
