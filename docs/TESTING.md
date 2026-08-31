@@ -27,7 +27,7 @@ PlatformIOでのビルドと書き込みは、使用するPC環境で別途確�
 
 115200 bpsでシリアルモニターを開き、次の内容を確認します。
 
-- `ChainOSCnano v1.0.0`が表示される
+- `ChainOSCnano v1.1.0`が表示される
 - チップがESP32-C6として表示される
 - Flash容量が4 MBとして表示される
 - PSRAMが0 bytesとして表示される
@@ -180,6 +180,16 @@ PlatformIOでのビルドと書き込みは、使用するPC環境で別途確�
 4. 押している間、同じChain KeyのLEDが緑色になることを確認します。
 5. Keyを離した時は送信も値の更新も行われないことを確認します。
 6. Wi-Fi切断中にKeyを押しても値が進まず、復旧後は切断前の次の値から再開することを確認します。
+
+### システム設定のLittleFS保存とNVS移行
+
+1. 旧ファームウェアでWi-Fi、OSC送信先、Web UI言語をNVSへ保存します。
+2. ファイルシステムを消去せずに本バージョンへ更新します。
+3. 起動ログに`[ChainOSCnano][SYSTEM] migration source=nvs target=littlefs result=ok`が出ることを確認します。
+4. `/system/settings.json`の保存ログでファイルサイズ、LittleFS総容量、使用量、空き容量を確認します。
+5. 再起動後もWi-Fi接続、OSC送信先、Web UI言語が復元されることを確認します。
+6. Wi-Fi設定を削除し、OSC送信先とWeb UI言語が維持されることを確認します。
+7. Web Installerまたはmerged firmwareでファイルシステムを消去せず更新し、同じ3設定が維持されることを確認します。
 7. 再起動後にSequence設定が復元され、値はStartから始まることを確認します。
 
 ### UIDと未接続デバイス
@@ -248,7 +258,7 @@ PlatformIOでのビルドと書き込みは、使用するPC環境で別途確�
 - 設定保存時と起動時に、設定ファイルサイズおよびLittleFSの総容量・使用量・空き容量をシリアルログで確認できる
 - 一時ファイルの検証後に既存ファイルが置換され、書き込み失敗時に既存設定が保護される
 
-## v1.0.0で確認済みの結果
+## v1.1.0で確認済みの結果
 
 - Device Preset Import Error Registry v1のinvalidテストJSONをすべて実機で確認
 - 各ファイルが想定したError Codeと日本語メッセージで拒否される

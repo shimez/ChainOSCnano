@@ -1,7 +1,6 @@
 #include "osc_manager.h"
 
 #include <ArduinoOSCWiFi.h>
-#include <Preferences.h>
 #include <WiFi.h>
 #include <math.h>
 
@@ -12,6 +11,7 @@
 #include "joystick_settings.h"
 #include "logging.h"
 #include "tof_settings.h"
+#include "system_settings.h"
 
 namespace {
 
@@ -261,15 +261,8 @@ void oscSetup() {
   angleSettingsSetup();
   tofSettingsSetup();
   joystickSettingsSetup();
-  Preferences preferences;
-  if (preferences.begin(WIFI_PREFS_NAMESPACE, true)) {
-    targetHost = preferences.getString("osc_host", targetHost);
-    const uint32_t storedPort = preferences.getUInt("osc_port", targetPort);
-    if (storedPort >= 1 && storedPort <= 65535) {
-      targetPort = static_cast<uint16_t>(storedPort);
-    }
-    preferences.end();
-  }
+  targetHost = systemSettingsOscHost();
+  targetPort = systemSettingsOscPort();
   NANO_VERBOSE_LOGF("[ChainOSCnano][OSC] target=%s:%u\n", targetHost.c_str(),
                 targetPort);
 }
@@ -282,16 +275,7 @@ bool oscSaveTarget(const String& host, uint16_t port) {
   if (host.isEmpty() || host.length() > 253 || port == 0) {
     return false;
   }
-  Preferences preferences;
-  if (!preferences.begin(WIFI_PREFS_NAMESPACE, false)) {
-    return false;
-  }
-  const size_t hostWritten = preferences.putString("osc_host", host);
-  const size_t portWritten = preferences.putUInt("osc_port", port);
-  preferences.end();
-  if (hostWritten == 0 || portWritten == 0) {
-    return false;
-  }
+  if (!systemSettingsSaveOsc(host, port)) return false;
   targetHost = host;
   targetPort = port;
   NANO_VERBOSE_LOGF("[ChainOSCnano][OSC] target_saved=%s:%u\n",

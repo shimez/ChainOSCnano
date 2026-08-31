@@ -11,9 +11,9 @@ M5NanoC6とM5Stack Chainデバイスを組み合わせ、コンパクトなOSC�
 
 ## 現在のバージョン
 
-### v1.0.0 — Device Preset Import Error Registry v1
+### v1.1.0 — システム設定をLittleFSへ移行
 
-Device Preset Import Error Registry v1へ完全対応し、JSON構文、必須項目、JSON型、OSC設定、Sequence、デバイス固有値・範囲、保存失敗のエラーコードと日英メッセージをChainOSCシリーズで統一しました。不正なプリセットは既存設定を変更せず拒否します。
+Wi-Fi認証情報、OSC送信先、Web UI言語の保存先をNVSからLittleFSへ移行しました。旧バージョンのNVS設定は初回起動時に自動移行され、以後は検証済み一時ファイルからの原子的な置換で保存されます。Device Preset Import Error Registry v1への完全対応も継続しています。
 
 v0.1.0の実機検証では次の項目を確認済みです。
 
@@ -76,7 +76,7 @@ v0.5.0では次のKey設定機能を追加しています。
 - 0件の場合は該当イベントでOSCを送信しない
 - SequenceのAddress、開始値、終了値、増減量、型、周回動作
 - SequenceモードのKeyを押した時はChain KeyのLEDを緑色で表示
-- UID単位のLittleFS保存と再起動後の復元
+- UID単位のデバイス設定と、Wi-Fi・OSC送信先・Web UI言語のLittleFS保存および再起動後の復元
 - ChainデバイスはUID全体、本体ボタンは`NanoButton.json`を設定ファイル名として使用
 - 一時ファイルの検証後に置換する安全な保存処理と、現行compact NVS設定からの自動移行
 - 設定ファイルサイズおよびLittleFSの総容量・使用量・空き容量をシリアルログへ出力
@@ -111,7 +111,7 @@ v0.8.0では次の保存機能を追加・変更しています。
 - 現行compact NVS設定からLittleFSへの自動移行
 - 設定ファイルサイズとLittleFSの総容量・使用量・空き容量をシリアルログへ出力
 
-v1.0.0ではデバイスプリセットの検証とエラー表示を改善しています。
+v1.1.0ではシステム設定の保存先をLittleFSへ移行し、デバイスプリセットの検証とエラー表示も維持しています。
 
 - Device Preset Import Error Registry v1の全22エラーコードに対応
 - JSON構文、必須項目、JSON型、OSC設定、Sequence、デバイス固有値・範囲を検証

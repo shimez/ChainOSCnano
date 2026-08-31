@@ -4,7 +4,6 @@
 #include <ArduinoJson.h>
 #include <DNSServer.h>
 #include <ESPmDNS.h>
-#include <Preferences.h>
 #include <WiFi.h>
 #include <ctype.h>
 #include <errno.h>
@@ -25,6 +24,7 @@
 #include "osc_manager.h"
 #include "responsive_web_server.h"
 #include "tof_settings.h"
+#include "system_settings.h"
 
 namespace {
 
@@ -86,10 +86,7 @@ const char* tr(const char* english, const char* japanese) {
 }
 
 void saveUiLanguage() {
-  Preferences preferences;
-  if (preferences.begin("ui", false)) {
-    preferences.putUChar("language", static_cast<uint8_t>(uiLanguage));
-    preferences.end();
+  if (systemSettingsSaveUiLanguage(static_cast<uint8_t>(uiLanguage))) {
     uiLanguageConfigured = true;
   }
 }
@@ -2508,15 +2505,7 @@ void handleSaveWifi() {
     return;
   }
 
-  Preferences preferences;
-  if (!preferences.begin(WIFI_PREFS_NAMESPACE, false)) {
-    sendProvisioningPage(tr("Could not open settings storage.", "設定ストレージを開けませんでした。"));
-    return;
-  }
-  const size_t ssidWritten = preferences.putString("ssid", ssid);
-  const size_t passwordWritten = preferences.putString("password", password);
-  preferences.end();
-  if (ssidWritten == 0 || (password.length() > 0 && passwordWritten == 0)) {
+  if (!systemSettingsSaveWifi(ssid, password)) {
     sendProvisioningPage(tr("Could not save Wi-Fi settings.", "Wi-Fi設定を保存できませんでした。"));
     return;
   }
@@ -2532,16 +2521,7 @@ void handleSaveWifi() {
 }
 
 void handleForgetWifi() {
-  Preferences preferences;
-  bool cleared = false;
-  if (preferences.begin(WIFI_PREFS_NAMESPACE, false)) {
-    const bool ssidRemoved =
-        !preferences.isKey("ssid") || preferences.remove("ssid");
-    const bool passwordRemoved =
-        !preferences.isKey("password") || preferences.remove("password");
-    cleared = ssidRemoved && passwordRemoved;
-    preferences.end();
-  }
+  const bool cleared = systemSettingsClearWifi();
   NANO_VERBOSE_LOGF("[ChainOSCnano][NET] credentials_cleared=%s\n",
                 cleared ? "true" : "false");
   String html = pageStart("Wi-Fi Settings Deleted");
@@ -2649,20 +2629,11 @@ void handleConnected() {
 void networkSetup() {
   NANO_VERBOSE_PRINTLN("[ChainOSCnano][NET] setup_begin=true");
 
-  Preferences preferences;
-  if (preferences.begin(WIFI_PREFS_NAMESPACE, true)) {
-    savedSsid = preferences.getString("ssid", "");
-    savedPassword = preferences.getString("password", "");
-    preferences.end();
-  }
-
-  if (preferences.begin("ui", true)) {
-    const uint8_t storedLanguage = preferences.getUChar("language", 0xff);
-    uiLanguageConfigured = storedLanguage <= static_cast<uint8_t>(UiLanguage::JAPANESE);
-    if (uiLanguageConfigured)
-      uiLanguage = static_cast<UiLanguage>(storedLanguage);
-    preferences.end();
-  }
+  savedSsid = systemSettingsWifiSsid();
+  savedPassword = systemSettingsWifiPassword();
+  uiLanguageConfigured = systemSettingsHasUiLanguage();
+  if (uiLanguageConfigured)
+    uiLanguage = static_cast<UiLanguage>(systemSettingsUiLanguage());
 
   if (savedSsid.length() == 0) {
     startAccessPoint("no_saved_credentials");
