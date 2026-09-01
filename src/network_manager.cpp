@@ -4,11 +4,13 @@
 #include <ArduinoJson.h>
 #include <DNSServer.h>
 #include <ESPmDNS.h>
+#include <LittleFS.h>
 #include <WiFi.h>
 #include <ctype.h>
 #include <errno.h>
 #include <esp_wifi.h>
 #include <esp_heap_caps.h>
+#include <nvs_flash.h>
 
 #include "nano_hardware.h"
 #include <limits.h>
@@ -126,7 +128,7 @@ button{width:100%;padding:12px;background:#28a745;color:#fff;border:none;border-
 .event-panel{margin-top:12px}.osc-list{display:grid;gap:10px}.osc-row{display:grid;grid-template-columns:62px minmax(180px,1fr) 115px minmax(100px,.55fr) 68px;gap:9px;align-items:start;padding:12px;border:1px solid #dce2ea;border-radius:10px;background:#fbfcfe}.osc-row label{margin-top:0}.order{display:flex;gap:3px;align-self:center}.mv{width:auto;margin:0;padding:7px;background:#fff;color:#526075;border:1px solid #dce2ea}.remove-msg{width:auto;margin-top:22px;padding:9px;background:#fff3f4;color:#c73c4a;border:1px solid #efc6cb}.add-msg{background:#f7faff;color:#3267e3;border:1px dashed #9db6ef}.add-msg:disabled{background:#eee;color:#888}.empty{display:none;padding:18px;text-align:center;color:#697586;border:1px dashed #dce2ea;border-radius:9px}.osc-list:empty+.empty{display:block}
 .sequence-card{margin-top:12px;padding:15px;border:1px solid #dce2ea;border-radius:10px;background:#fbfcfe}.sequence-card h3{margin-top:0}.seq-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.seq-address{grid-column:1/-1}
 .encoder-rotation{margin-top:12px;padding:14px;border-left:5px solid #fd7e14;background:#f8f9fa}.encoder-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.encoder-address{grid-column:1/-1}.encoder-mode-hidden{visibility:hidden;pointer-events:none}.angle-section,.tof-section{margin-top:12px;padding:14px;border-left:5px solid #6610f2;background:#f8f9fa}.joystick-section{margin-top:12px;padding:14px;border-left:5px solid #e83e8c;background:#f8f9fa}.angle-grid,.tof-grid,.joystick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.angle-address,.tof-address,.joystick-address,.joystick-invert{grid-column:1/-1}.angle-section h3,.tof-section h3,.joystick-section h3{margin:0 0 8px}.joystick-invert{display:flex;gap:18px;flex-wrap:wrap}.joystick-invert label{display:flex;align-items:center;gap:6px;margin:0}.joystick-invert input{width:auto;margin:0}.click-section{margin-top:14px;padding:14px;border-left:5px solid #28a745;background:#f8f9fa}.click-section h3,.encoder-rotation h3{margin:0 0 8px}
-.save-bar{position:sticky;z-index:15;bottom:8px;display:flex;align-items:center;gap:12px;padding:10px 12px;margin:16px 0 28px;background:rgba(255,255,255,.96);border:1px solid #dce2ea;border-radius:10px;box-shadow:0 5px 18px rgba(0,0,0,.14)}.save-bar button{flex:1;margin:0;background:#28a745}.dirty-status{color:#b45f06;font-weight:bold;white-space:nowrap}.saved-device-card h2{display:flex;align-items:center;gap:4px;flex-wrap:wrap}.btn-warning{background:#ff9800}.toast{position:fixed;z-index:30;left:50%;bottom:78px;transform:translateX(-50%);padding:11px 18px;border-radius:8px;background:#17324d;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.25)}.wifi-actions{margin-top:28px}.wifi-actions form{margin:0}
+.save-bar{position:sticky;z-index:15;bottom:8px;display:flex;align-items:center;gap:12px;padding:10px 12px;margin:16px 0 28px;background:rgba(255,255,255,.96);border:1px solid #dce2ea;border-radius:10px;box-shadow:0 5px 18px rgba(0,0,0,.14)}.save-bar button{flex:1;margin:0;background:#28a745}.dirty-status{color:#b45f06;font-weight:bold;white-space:nowrap}.saved-device-card h2{display:flex;align-items:center;gap:4px;flex-wrap:wrap}.btn-warning{background:#ff9800}.toast{position:fixed;z-index:30;left:50%;bottom:78px;transform:translateX(-50%);padding:11px 18px;border-radius:8px;background:#17324d;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.25)}.wifi-actions{margin-top:28px}.wifi-actions form{margin:0}.danger-zone{margin-top:28px;border-left-color:#dc3545}.danger-zone button{width:100%;margin:0;background:#dc3545}
 .language-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.language-row h2{margin:0}.language-row form{margin:0;min-width:150px}.language-row select{margin:0}
 .device-menu-wrap{position:relative}.device-menu-button{width:32px;height:30px;margin:0;padding:0;background:#f1f4f8;color:#42516a;border:1px solid #dce2ea;border-radius:7px;font-size:18px}.device-menu{position:absolute;z-index:20;right:0;top:36px;width:235px;padding:7px;border:1px solid #dce2ea;border-radius:9px;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.18)}.device-menu[hidden]{display:none}.device-menu a,.device-menu button{display:block;width:100%;margin:0;padding:10px;border:0;border-radius:6px;background:#fff;color:#253047;text-align:left;text-decoration:none;font-size:14px}.device-menu a:hover,.device-menu button:hover{background:#f1f4f8}.tool-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tool-row a,.tool-row button{display:block;margin:0;padding:12px;border-radius:6px;background:#3267e3;color:#fff;text-align:center;text-decoration:none;font-size:16px}.import-status{min-height:20px;margin:9px 0 0;color:#526075;font-size:.9em}
 @media(max-width:720px){.system-grid,.key-grid,.seq-grid,.encoder-grid,.angle-grid,.tof-grid,.joystick-grid{grid-template-columns:1fr}.seq-address,.encoder-address,.angle-address,.tof-address,.joystick-address,.joystick-invert{grid-column:1}.encoder-mode-hidden{display:none}.osc-row{grid-template-columns:52px 1fr}.osc-row .field,.remove-msg{grid-column:2}}
@@ -139,6 +141,7 @@ function validateInput(input){const address=input.classList.contains('msg-addres
 function limitAndValidate(input,max){limitBytes(input,max);validateInput(input)}function validateSettingsForm(form){let valid=true;form.querySelectorAll('.msg-address,.msg-value,.osc-address').forEach(input=>{if(!validateInput(input))valid=false});if(!valid){const bad=form.querySelector('.invalid');if(bad)bad.focus();alert(tx('Please correct the highlighted OSC fields.','赤く表示されたOSC設定項目を修正してください。'))}return valid}
 function markDirty(event){if(event&&event.target&&event.target.matches('input[type="file"]'))return;const status=document.getElementById('dirty-status');if(status)status.hidden=false}
 function showToast(message){const toast=document.getElementById('save-toast');toast.textContent=message;toast.hidden=false;clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>toast.hidden=true,3000)}
+async function deleteAllSettings(event){event.preventDefault();if(!confirm(tx('Delete all settings? This cannot be undone.','すべての設定を削除しますか？この操作は取り消せません。')))return;const button=event.currentTarget.querySelector('button');button.disabled=true;button.textContent=tx('Deleting...','削除中...');try{const response=await fetch('/delete-all-settings',{method:'POST'}),message=await response.text();if(!response.ok)throw new Error(message);showToast(message)}catch(error){button.disabled=false;button.textContent=tx('Delete All Settings','すべての設定を削除');alert(error.message||tx('Could not delete settings.','設定を削除できませんでした。'))}}
 async function saveSettings(event){const form=event.currentTarget;if(!validateSettingsForm(form))return;const button=form.querySelector('.save-bar button');button.disabled=true;try{const response=await fetch('/save-all?ajax=1',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(new FormData(form))});const message=await response.text();if(!response.ok)throw new Error(message);document.getElementById('dirty-status').hidden=true;showToast(message)}catch(error){alert(error.message||tx('Could not save settings.','設定を保存できませんでした。'))}finally{button.disabled=false}}
 async function deleteSavedDevice(event,form){event.preventDefault();if(!confirm(tx('Delete settings for this device?','このデバイスの設定を削除しますか？')))return;try{const response=await fetch('/delete_device?ajax=1',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(new FormData(form))});const message=await response.text();if(!response.ok)throw new Error(message);form.closest('.saved-device-card').remove();showToast(message)}catch(error){alert(error.message||tx('Could not delete device settings.','デバイス設定を削除できませんでした。'))}}
 function toggleDeviceMenu(index){document.querySelectorAll('.device-menu').forEach(menu=>{if(menu.id!=='device-menu-'+index)menu.hidden=true});const menu=document.getElementById('device-menu-'+index);menu.hidden=!menu.hidden}
@@ -1520,7 +1523,9 @@ void sendStatusPage(const String& message = String()) {
       if (!flushHtml("SAVED_DEVICE_SENT")) return;
     }
   }
-  html += F("</main></body></html>");
+  html += F("<div class='card danger-zone'><form method='post' action='/delete-all-settings' onsubmit='deleteAllSettings(event);return false'><button type='submit'>");
+  html += tr("Delete All Settings", "すべての設定を削除");
+  html += F("</button></form></div></main></body></html>");
   if (!flushHtml("FOOTER_SENT")) return;
   server.sendContent("");
 #if CHAINOSCNANO_WEB_PERF_DEBUG
@@ -2531,6 +2536,22 @@ void handleForgetWifi() {
   scheduleRestart();
 }
 
+void handleDeleteAllSettings() {
+  LittleFS.end();
+  const bool fileSystemCleared = LittleFS.format();
+  const esp_err_t nvsResult = nvs_flash_erase();
+  if (!fileSystemCleared || nvsResult != ESP_OK) {
+    server.send(500, "text/plain; charset=utf-8",
+                tr("Could not delete all settings.",
+                   "すべての設定を削除できませんでした。"));
+    return;
+  }
+  server.send(200, "text/plain; charset=utf-8",
+              tr("All settings were deleted. Restarting.",
+                 "すべての設定を削除しました。再起動します。"));
+  scheduleRestart();
+}
+
 void registerRoutes() {
   if (routesRegistered) {
     return;
@@ -2545,6 +2566,7 @@ void registerRoutes() {
   server.on("/save-key", HTTP_POST, handleSaveKey);
   server.on("/save-all", HTTP_POST, handleSaveAll);
   server.on("/delete_device", HTTP_POST, handleDeleteDevice);
+  server.on("/delete-all-settings", HTTP_POST, handleDeleteAllSettings);
   server.on("/export_settings", HTTP_GET, handleExportSettings);
   server.on("/import_settings", HTTP_POST, handleImportSettings);
   server.on("/export_device_preset", HTTP_GET, handleExportDevicePreset);
