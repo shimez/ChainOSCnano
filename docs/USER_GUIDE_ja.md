@@ -8,7 +8,7 @@ permalink: /user-guide/
 
 [English version](../en/user-guide/)
 
-ChainOSCnano v1.2.0の初期設定とWeb UIを説明します。
+ChainOSCnano v1.2.1の初期設定とWeb UIを説明します。
 
 > [!IMPORTANT]
 > ChainOSCnanoは個人開発の非公式プロジェクトです。設定画面には認証機能がないため、信頼できるローカルネットワークで使用してください。

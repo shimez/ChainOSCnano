@@ -6,6 +6,12 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-09-02
+
+### Added
+
+- AP Modeのキャプティブポータル最下段に、全設定を削除して再起動する赤色ボタンを追加
+
 ## [1.2.0] - 2026-09-01
 
 ### Added
@@ -172,7 +178,8 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 - M5NanoC6内蔵RGB LEDの初期化
 - v0.1.0向けREADME、テスト手順、第三者ライセンス表記
 
-[Unreleased]: https://github.com/shimez/ChainOSCnano/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/shimez/ChainOSCnano/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/shimez/ChainOSCnano/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/shimez/ChainOSCnano/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/shimez/ChainOSCnano/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/shimez/ChainOSCnano/compare/v0.8.0...v1.0.0

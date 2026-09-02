@@ -979,7 +979,21 @@ void sendProvisioningPage(const String& message = String()) {
              "8～63文字、または64桁の16進数PSKを入力してください。オープンネットワークの場合のみ空欄にします。");
   html += F("</p><button type='submit'>");
   html += tr("Save Wi-Fi and Restart", "Wi-Fiを保存して再起動");
-  html += F("</button></form></div>");
+  html += F("</button></form></div><div class='card danger-zone'><p class='note'>");
+  html += tr("Delete Wi-Fi, OSC target, UI language, and all device settings.",
+             "Wi-Fi、OSC送信先、UI言語、すべてのデバイス設定を削除します。");
+  html += F("</p><form method='post' action='/delete-all-settings' onsubmit='deleteProvisioningSettings(event);return false'><button type='submit'>");
+  html += tr("Delete All Settings", "すべての設定を削除");
+  html += F("</button><p id='delete-status'></p></form></div><script>async function deleteProvisioningSettings(event){event.preventDefault();if(!confirm('");
+  html += tr("Delete Wi-Fi, OSC target, and all device settings? This cannot be undone. Continue?",
+             "Wi-Fi、OSC送信先、すべてのデバイス設定を削除します。この操作は取り消せません。続行しますか？");
+  html += F("'))return;const form=event.currentTarget,button=form.querySelector('button'),status=document.getElementById('delete-status');button.disabled=true;button.textContent='");
+  html += tr("Deleting...", "削除中...");
+  html += F("';try{const response=await fetch('/delete-all-settings',{method:'POST'}),message=await response.text();if(!response.ok)throw new Error(message);status.className='status';status.textContent=message}catch(error){status.className='error';status.textContent=error.message||'");
+  html += tr("Could not delete settings.", "設定を削除できませんでした。");
+  html += F("';button.disabled=false;button.textContent='");
+  html += tr("Delete All Settings", "すべての設定を削除");
+  html += F("'}}</script>");
   sendPage(html);
 }
 
