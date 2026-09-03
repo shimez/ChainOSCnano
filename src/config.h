@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 static constexpr const char* APP_NAME = "ChainOSCnano";
-static constexpr const char* APP_VERSION = "1.2.1";
+static constexpr const char* APP_VERSION = "1.2.2";
 static constexpr unsigned long SERIAL_BAUD = 115200;
 static constexpr unsigned long BOOT_DIAGNOSTICS_DELAY_MS = 5000;
 static constexpr unsigned long HEARTBEAT_INTERVAL_MS = 5000;

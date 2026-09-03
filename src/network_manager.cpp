@@ -111,7 +111,7 @@ main{max-width:1100px;margin:0 auto}
 h1{font-size:1.4em;margin:0 0 16px}h2{margin:0;font-size:1.1em}
 label{display:block;margin-top:10px;font-weight:bold;font-size:.9em}
 input,select{width:100%;padding:8px;margin-top:4px;box-sizing:border-box;border:1px solid #9aa3ad;border-radius:2px;font-size:1em}
-input.invalid,select.invalid{border:2px solid #c73c4a;background:#fff8f8}.osc-row small,.address-field small{display:flex;justify-content:space-between;min-height:17px;color:#697586}.osc-row .err,.address-field .err{color:#c73c4a}
+input.invalid,select.invalid{border:2px solid #c73c4a;background:#fff8f8}.osc-row small,.address-field small{display:flex;justify-content:space-between;min-height:17px;color:#697586}.osc-row .err,.address-field .err,.sequence-error,.numeric-error{color:#c73c4a}.sequence-error,.numeric-error{display:block;min-height:17px;font-weight:normal}
 button{width:100%;padding:12px;background:#28a745;color:#fff;border:none;border-radius:6px;font-size:16px;margin-top:12px;cursor:pointer}
 .primary{background:#3267e3}.danger{background:#dc3545}.note{color:#888;font-size:.9em;line-height:1.5}.meta{color:#666;font-size:.85em}
 .status{padding:10px 12px;background:#edf3ff;color:#244da7;border:1px solid #cddbf8;border-radius:8px}
@@ -137,8 +137,13 @@ button{width:100%;padding:12px;background:#28a745;color:#fff;border:none;border-
 const char PAGE_SCRIPT[] PROGMEM = R"JS(
 const JA=__JA__;const tx=(en,ja)=>JA?ja:en;const MAX_MSG=8;
 const enc=new TextEncoder();function bytes(value){return enc.encode(value).length}function limitBytes(input,max){while(bytes(input.value)>max)input.value=input.value.slice(0,-1)}
-function validateInput(input){const address=input.classList.contains('msg-address')||input.classList.contains('osc-address'),max=address?192:128,b=bytes(input.value);let error='';if(address){if(!input.value)error=tx('Required','必須です');else if(input.value[0]!=='/')error=tx('Start with /','「/」から始めてください');else if(/[\s#*,?\[\]{}]/.test(input.value))error=tx('Invalid character','使用できない文字があります')}else{const row=input.closest('.osc-row'),type=row?row.querySelector('.type').value:'2';if(type==='0'&&(!input.value.trim()||!Number.isFinite(Number(input.value))))error=tx('Invalid float','Float値が正しくありません');if(type==='1'&&!/^[+-]?\d+$/.test(input.value.trim()))error=tx('Invalid integer','Int値が正しくありません')}if(b>max)error=tx('Too long','長すぎます');input.classList.toggle('invalid',!!error);const small=input.parentNode.querySelector('small');if(small){small.querySelector('.err').textContent=error;small.querySelector('.bytes').textContent=b+' / '+max+' bytes'}return !error}
-function limitAndValidate(input,max){limitBytes(input,max);validateInput(input)}function validateSettingsForm(form){let valid=true;form.querySelectorAll('.msg-address,.msg-value,.osc-address').forEach(input=>{if(!validateInput(input))valid=false});if(!valid){const bad=form.querySelector('.invalid');if(bad)bad.focus();alert(tx('Please correct the highlighted OSC fields.','赤く表示されたOSC設定項目を修正してください。'))}return valid}
+function validateInput(input){const address=input.classList.contains('msg-address')||input.classList.contains('osc-address'),max=address?192:128,b=bytes(input.value);let error='';if(address){if(!input.value)error=tx('Required','必須です');else if(input.value[0]!=='/')error=tx('Start with /','「/」から始めてください');else if(/[\s#*,?\[\]{}]/.test(input.value))error=tx('Invalid character','使用できない文字があります')}else{const row=input.closest('.osc-row'),type=row?row.querySelector('.type').value:'2',v=input.value.trim();if(type==='0'){const n=Number(v),f=Math.fround(n);if(!v||!Number.isFinite(n)||!Number.isFinite(f)||(n!==0&&f===0))error=tx('Float must be representable as a finite OSC float32','Float値は有限のOSC float32として表現できる範囲で入力してください')}if(type==='1'){if(!/^[+-]?\d+$/.test(v))error=tx('Invalid integer','Int値が正しくありません');else{const n=BigInt(v);if(n<-2147483648n||n>2147483647n)error=tx('Int must be between -2147483648 and 2147483647','Int値は-2147483648～2147483647の範囲で入力してください')}}}if(b>max)error=tx('Too long','長すぎます');input.classList.toggle('invalid',!!error);const small=input.parentNode.querySelector('small');if(small){small.querySelector('.err').textContent=error;small.querySelector('.bytes').textContent=b+' / '+max+' bytes'}return !error}
+function float32Error(value,label){const text=value.trim(),number=Number(text),value32=Math.fround(number);return !text||!Number.isFinite(number)||!Number.isFinite(value32)||(number!==0&&value32===0)?tx('Enter a finite '+label+' value representable as a 32-bit floating-point number',label+'には有限の32-bit浮動小数点数として表現できる値を入力してください'):''}
+function fieldError(input,error){let small=input.parentNode.querySelector('.numeric-error');if(!small){small=document.createElement('small');small.className='numeric-error err';input.parentNode.appendChild(small)}small.textContent=error;input.classList.toggle('invalid',!!error);return !error}
+function validateDeviceNumber(input){const name=input.name||'',label=(input.parentNode.querySelector('label')||{}).textContent||tx('Value','値');if(/(enc_(abs_min|abs_max|scale|out_min|out_max)|angle_out_(min|max)|joy_out_(min|max)|tof_out_(min|max))_/.test(name))return fieldError(input,float32Error(input.value,label));let min,max;if(name.startsWith('joy_deadband_')){min=1;max=254}else if(name.startsWith('tof_deadband_')){min=1;max=2000}else if(name.startsWith('tof_max_')){min=31;max=2000}else if(name.startsWith('angle_deadband_')){min=1;const select=input.closest('.device').querySelector('[name^=angle_12bit_]');max=select&&select.value==='0'?255:4095}else return true;const text=input.value.trim(),number=Number(text),error=/^[+-]?\d+$/.test(text)&&Number.isSafeInteger(number)&&number>=min&&number<=max?'':tx(label+' must be an integer from '+min+' to '+max,label+'は'+min+'～'+max+'の整数で入力してください');return fieldError(input,error)}
+function updateAngleResolution(select){const input=select.closest('.device').querySelector('[name^=angle_deadband_]');if(input)validateDeviceNumber(input)}
+function sequenceFieldError(input,error){let small=input.parentNode.querySelector('.sequence-error');if(!small){small=document.createElement('small');small.className='sequence-error err';input.parentNode.appendChild(small)}small.textContent=error;input.classList.toggle('invalid',!!error);return !error}function validateSequence(box){let fields=box.querySelectorAll('input[type=number]'),valid=true;if(fields.length<3)return true;let start=Number(fields[0].value),end=Number(fields[1].value),step=Number(fields[2].value),startError=float32Error(fields[0].value,tx('Start','開始値')),endError=float32Error(fields[1].value,tx('End','終了値')),stepError=float32Error(fields[2].value,tx('Step','増減量'));if(!sequenceFieldError(fields[0],startError))valid=false;if(!sequenceFieldError(fields[1],endError))valid=false;if(!stepError&&step===0)stepError=tx('Step must not be zero','増減量には0を指定できません');if(!startError&&!endError&&!stepError&&((start<end&&step<0)||(start>end&&step>0)))stepError=tx('Step must advance from Start toward End','増減量が開始値から終了値へ進む方向になっていません');if(!sequenceFieldError(fields[2],stepError))valid=false;return valid}
+function limitAndValidate(input,max){limitBytes(input,max);validateInput(input)}function validateSettingsForm(form){let valid=true;form.querySelectorAll('.msg-address,.msg-value,.osc-address').forEach(input=>{if(!validateInput(input))valid=false});form.querySelectorAll('.device input[type=number]').forEach(input=>{if(!input.closest('.sequence-card')&&!validateDeviceNumber(input))valid=false});form.querySelectorAll('.sequence-card').forEach(box=>{if(!validateSequence(box))valid=false});if(!valid){const bad=form.querySelector('.invalid');if(bad)bad.focus();alert(tx('Please correct the settings highlighted in red.','赤く表示された設定項目を修正してください。'))}return valid}
 function markDirty(event){if(event&&event.target&&event.target.matches('input[type="file"]'))return;const status=document.getElementById('dirty-status');if(status)status.hidden=false}
 function showToast(message){const toast=document.getElementById('save-toast');toast.textContent=message;toast.hidden=false;clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>toast.hidden=true,3000)}
 async function deleteAllSettings(event){event.preventDefault();if(!confirm(tx('Delete all settings? This cannot be undone.','すべての設定を削除しますか？この操作は取り消せません。')))return;const button=event.currentTarget.querySelector('button');button.disabled=true;button.textContent=tx('Deleting...','削除中...');try{const response=await fetch('/delete-all-settings',{method:'POST'}),message=await response.text();if(!response.ok)throw new Error(message);showToast(message)}catch(error){button.disabled=false;button.textContent=tx('Delete All Settings','すべての設定を削除');alert(error.message||tx('Could not delete settings.','設定を削除できませんでした。'))}}
@@ -157,6 +162,7 @@ function updateEncoderMode(select){const card=select.closest('.encoder-rotation'
 function showEvent(group,event,button){document.querySelectorAll('.event-panel[data-group="'+group+'"]').forEach(panel=>panel.style.display=panel.dataset.event===event?'block':'none');button.parentNode.querySelectorAll('.event-tab').forEach(tab=>tab.classList.remove('active'));button.classList.add('active')}
 function rows(group){return document.querySelectorAll('.osc-row[data-group="'+group+'"]')}
 function renumber(group){const all=rows(group);['press','release'].forEach(event=>{document.querySelectorAll('.osc-row[data-group="'+group+'"][data-event="'+event+'"]').forEach((row,index)=>{const prefix=event==='press'?'p':'r';row.querySelector('.msg-address').name=prefix+'_address_'+group+'_'+index;row.querySelector('.type').name=prefix+'_type_'+group+'_'+index;row.querySelector('.msg-value').name=prefix+'_value_'+group+'_'+index})});document.getElementById('count-'+group).textContent=all.length;document.getElementById('p-count-'+group).value=document.querySelectorAll('.osc-row[data-group="'+group+'"][data-event="press"]').length;document.getElementById('r-count-'+group).value=document.querySelectorAll('.osc-row[data-group="'+group+'"][data-event="release"]').length;document.querySelectorAll('.add-msg[data-group="'+group+'"]').forEach(button=>button.disabled=all.length>=MAX_MSG)}
+document.addEventListener('input',event=>{const box=event.target.closest&&event.target.closest('.sequence-card');if(box&&event.target.matches('input[type=number]'))validateSequence(box);else if(event.target.matches&&event.target.matches('.device input[type=number]'))validateDeviceNumber(event.target)})
 function moveMsg(button,direction){const row=button.closest('.osc-row'),sibling=direction<0?row.previousElementSibling:row.nextElementSibling;if(!sibling)return;direction<0?row.parentNode.insertBefore(row,sibling):row.parentNode.insertBefore(sibling,row);renumber(row.dataset.group);markDirty()}
 function removeMsg(button){const row=button.closest('.osc-row'),group=row.dataset.group;row.remove();renumber(group);markDirty()}
 function addMsg(button){const group=button.dataset.group,event=button.dataset.event;if(rows(group).length>=MAX_MSG)return;const list=document.getElementById('list-'+event+'-'+group),row=document.createElement('div');row.className='osc-row';row.dataset.group=group;row.dataset.event=event;row.innerHTML='<div class="order"><button type="button" class="mv" onclick="moveMsg(this,-1)">&uarr;</button><button type="button" class="mv" onclick="moveMsg(this,1)">&darr;</button></div><div class="field"><label>'+tx('OSC Address','OSCアドレス')+'</label><input class="msg-address" maxlength="192" required oninput="limitAndValidate(this,192)"><small><span class="err"></span><span class="bytes"></span></small></div><div class="field"><label>'+tx('Type','型')+'</label><select class="type" onchange="validateInput(this.closest(\'.osc-row\').querySelector(\'.msg-value\'))"><option value="0" selected>Float</option><option value="1">Int</option><option value="2">String</option></select><small></small></div><div class="field"><label>'+tx('Value','値')+'</label><input class="msg-value" maxlength="128" value="1.0" oninput="limitAndValidate(this,128)"><small><span class="err"></span><span class="bytes"></span></small></div><button type="button" class="remove-msg" onclick="removeMsg(this)">'+tx('Delete','削除')+'</button>';list.appendChild(row);renumber(group);markDirty();row.querySelector('.msg-address').focus()}
@@ -170,6 +176,7 @@ String pageStart(const char* title) {
   html += isJapaneseUi() ? F("ja") : F("en");
   html += F("'><head><meta charset='utf-8'>");
   html += F("<meta name='viewport' content='width=device-width,initial-scale=1'>");
+  html += F("<link rel='icon' type='image/svg+xml' href='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzNiMjQwYyIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzBlMGIwOCIvPjwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImxlZnRNYXJrIiB4MT0iOSIgeTE9IjMwLjUiIHgyPSIzNiIgeTI9IjMwLjUiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj48c3RvcCBzdG9wLWNvbG9yPSIjZjU5ZTBiIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjZmJiZjI0Ii8+PC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0icmlnaHRNYXJrIiB4MT0iNTUiIHkxPSIzMC41IiB4Mj0iMjgiIHkyPSIzMC41IiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHN0b3Agc3RvcC1jb2xvcj0iI2Q5NzcwNiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZiYmYyNCIvPjwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxyZWN0IHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgcng9IjE0IiBmaWxsPSJ1cmwoI2JnKSIvPgogIDxnIGZpbGw9Im5vbmUiIHN0cm9rZS13aWR0aD0iNS41Ij48cmVjdCB4PSI5IiB5PSIyMiIgd2lkdGg9IjI3IiBoZWlnaHQ9IjE3IiByeD0iOC41IiB0cmFuc2Zvcm09InJvdGF0ZSgtMTggMjIuNSAzMC41KSIgc3Ryb2tlPSJ1cmwoI2xlZnRNYXJrKSIvPjxyZWN0IHg9IjI4IiB5PSIyMiIgd2lkdGg9IjI3IiBoZWlnaHQ9IjE3IiByeD0iOC41IiB0cmFuc2Zvcm09InJvdGF0ZSgxOCA0MS41IDMwLjUpIiBzdHJva2U9InVybCgjcmlnaHRNYXJrKSIvPjwvZz4KPC9zdmc+Cg=='>");
   html += F("<title>");
   html += title;
   html += F("</title><style>");
@@ -584,7 +591,10 @@ bool validateDevicePreset(JsonObjectConst root, int deviceType, bool legacy,
       return presetFieldTypeInvalid(error);
     String address = angle["address"].as<const char*>();
     if (!validJsonAddress(address, error)) return false;
-    if (angle["deadband"].as<int>() < 1) return presetDeviceSettingInvalid(error);
+    const int angleDeadband = angle["deadband"].as<int>();
+    const bool angle12Bit = angle["use12bit"].as<bool>();
+    if (angleDeadband < 1 || angleDeadband > (angle12Bit ? 4095 : 255))
+      return presetDeviceSettingInvalid(error);
     return validatePresetRange(angle["range"].as<JsonObjectConst>(), false,
                                legacy, error);
   }
@@ -1259,7 +1269,7 @@ void appendAngleCard(String& html, const AngleSetting& setting,
   html += "<div class='key-grid'><div><label>" + String(tr("Device Name", "デバイス名")) + "</label><input name='display_name_" + idx + "' maxlength='64' required value='" + htmlEscape(setting.displayName) + "'></div></div>";
   html += "<div class='angle-section'><h3>Angle</h3><div class='angle-grid'>";
   html += "<div class='address-field angle-address'><label>" + String(tr("OSC Address", "OSCアドレス")) + "</label><input class='osc-address' maxlength='192' required name='angle_address_" + idx + "' value='" + htmlEscape(setting.address) + "' oninput='limitAndValidate(this,192)'><small><span class='err'></span><span class='bytes'></span></small></div>";
-  html += "<div><label>" + String(tr("Resolution", "分解能")) + "</label><select name='angle_12bit_" + idx + "'><option value='1'" + String(setting.use12Bit ? " selected" : "") + ">12-bit</option><option value='0'" + String(!setting.use12Bit ? " selected" : "") + ">8-bit</option></select></div>";
+  html += "<div><label>" + String(tr("Resolution", "分解能")) + "</label><select name='angle_12bit_" + idx + "' onchange='updateAngleResolution(this)'><option value='1'" + String(setting.use12Bit ? " selected" : "") + ">12-bit</option><option value='0'" + String(!setting.use12Bit ? " selected" : "") + ">8-bit</option></select></div>";
   html += "<div><label>" + String(tr("Deadband", "不感帯")) + "</label><input type='number' min='1' required name='angle_deadband_" + idx + "' value='" + String(setting.deadband) + "'></div>";
   html += "<div><label>" + String(tr("Out Min", "出力最小値")) + "</label><input type='number' step='any' required name='angle_out_min_" + idx + "' value='" + String(setting.outputMin, 7) + "'></div>";
   html += "<div><label>" + String(tr("Out Max", "出力最大値")) + "</label><input type='number' step='any' required name='angle_out_max_" + idx + "' value='" + String(setting.outputMax, 7) + "'></div>";
@@ -1372,7 +1382,7 @@ void sendStatusPage(const String& message = String()) {
     html += htmlEscape(message);
     html += F("</p>");
   }
-  html += F("<form id='settings-form' method='post' action='/save-all' onsubmit='saveSettings(event);return false'><div class='card'><h2>"); html += tr("OSC Destination", "OSC送信先"); html += F("</h2>");
+  html += F("<form id='settings-form' method='post' action='/save-all' novalidate onsubmit='saveSettings(event);return false'><div class='card'><h2>"); html += tr("OSC Destination", "OSC送信先"); html += F("</h2>");
   html += F("<label for='osc_host'>"); html += tr("Hostname or IPv4 address", "ホスト名またはIPv4アドレス"); html += F("</label>");
   html += F("<input id='osc_host' name='osc_host' maxlength='253' required value='");
   html += htmlEscape(oscTargetHost());
@@ -1560,6 +1570,15 @@ bool parseInt32(const String& text, int32_t& value) {
   return true;
 }
 
+bool parseBoundedInteger(const String& text, int minimum, int maximum,
+                         int& value) {
+  int32_t parsed = 0;
+  if (!parseInt32(text, parsed) || parsed < minimum || parsed > maximum)
+    return false;
+  value = static_cast<int>(parsed);
+  return true;
+}
+
 bool readKeySetting(size_t formIndex, KeySetting& candidate) {
   const String suffix = "_" + String(formIndex);
   const String identity = server.arg("identity" + suffix);
@@ -1647,9 +1666,12 @@ bool readEncoderSetting(size_t formIndex, EncoderSetting& candidate) {
 
   auto readFloat = [&](const String& name, float& value) {
     const String text = server.arg(name + suffix);
+    if (text.isEmpty()) return false;
+    errno = 0;
     char* end = nullptr;
     value = strtof(text.c_str(), &end);
-    return end != text.c_str() && *end == '\0' && isfinite(value);
+    return errno != ERANGE && end != text.c_str() && *end == '\0' &&
+           isfinite(value);
   };
   String rotationError;
   bool valid = !candidate.displayName.isEmpty() &&
@@ -1743,16 +1765,21 @@ bool readAngleSetting(size_t formIndex, AngleSetting& candidate) {
   candidate.address = server.arg("angle_address" + suffix);
   candidate.address.trim();
   candidate.use12Bit = server.arg("angle_12bit" + suffix).toInt() != 0;
-  candidate.deadband = server.arg("angle_deadband" + suffix).toInt();
+  const bool validDeadband = parseBoundedInteger(
+      server.arg("angle_deadband" + suffix), 1,
+      candidate.use12Bit ? 4095 : 255, candidate.deadband);
   auto readFloat = [&](const String& name, float& value) {
     const String text = server.arg(name + suffix);
+    if (text.isEmpty()) return false;
+    errno = 0;
     char* end = nullptr;
     value = strtof(text.c_str(), &end);
-    return end != text.c_str() && *end == '\0' && isfinite(value);
+    return errno != ERANGE && end != text.c_str() && *end == '\0' &&
+           isfinite(value);
   };
   String error;
   if (candidate.displayName.isEmpty() || candidate.displayName.length() > 64 ||
-      !validJsonAddress(candidate.address, error) || candidate.deadband < 1 ||
+      !validJsonAddress(candidate.address, error) || !validDeadband ||
       !readFloat("angle_out_min", candidate.outputMin) ||
       !readFloat("angle_out_max", candidate.outputMax))
     return false;
@@ -1771,17 +1798,18 @@ bool readTofSetting(size_t formIndex, TofSetting& candidate) {
   if (!current) return false;
   candidate = *current; candidate.displayName = server.arg("display_name" + suffix); candidate.displayName.trim();
   candidate.address = server.arg("tof_address" + suffix); candidate.address.trim();
-  candidate.deadband = server.arg("tof_deadband" + suffix).toInt(); candidate.maxDistanceMm = server.arg("tof_max" + suffix).toInt();
+  const bool validTofDeadband = parseBoundedInteger(server.arg("tof_deadband" + suffix), 1, 2000, candidate.deadband);
+  const bool validTofMaximum = parseBoundedInteger(server.arg("tof_max" + suffix), 31, 2000, candidate.maxDistanceMm);
   candidate.nearValueHigh = server.arg("tof_near_high" + suffix).toInt() != 0;
-  auto readFloat = [&](const String& name, float& value) { const String text = server.arg(name + suffix); char* end = nullptr; value = strtof(text.c_str(), &end); return end != text.c_str() && *end == '\0' && isfinite(value); };
+  auto readFloat = [&](const String& name, float& value) { const String text = server.arg(name + suffix); if(text.isEmpty())return false;errno=0;char* end=nullptr;value=strtof(text.c_str(),&end);return errno!=ERANGE&&end!=text.c_str()&&*end=='\0'&&isfinite(value); };
   String error; const int type = server.arg("tof_out_type" + suffix).toInt();
-  if (candidate.displayName.isEmpty() || candidate.displayName.length() > 64 || !validJsonAddress(candidate.address, error) || candidate.deadband < 1 || candidate.deadband > 2000 || candidate.maxDistanceMm < 31 || candidate.maxDistanceMm > 2000 || !readFloat("tof_out_min", candidate.outputMin) || !readFloat("tof_out_max", candidate.outputMax) || type < TYPE_FLOAT || type > TYPE_INT) return false;
+  if (candidate.displayName.isEmpty() || candidate.displayName.length() > 64 || !validJsonAddress(candidate.address, error) || !validTofDeadband || !validTofMaximum || !readFloat("tof_out_min", candidate.outputMin) || !readFloat("tof_out_max", candidate.outputMax) || type < TYPE_FLOAT || type > TYPE_INT) return false;
   candidate.outputType = static_cast<ValueType>(type); return true;
 }
 
 bool readJoystickSetting(size_t formIndex, JoystickSetting& candidate) {
-  const String suffix="_"+String(formIndex),identity=server.arg("identity"+suffix);JoystickSetting* current=nullptr;for(size_t i=0;i<joystickSettingsCount();++i){JoystickSetting* s=joystickSettingsAt(i);if(s&&s->identity==identity&&s->connectedPortMask){current=s;break;}}if(!current)return false;candidate=*current;candidate.displayName=server.arg("display_name"+suffix);candidate.displayName.trim();candidate.xAddress=server.arg("joy_x"+suffix);candidate.yAddress=server.arg("joy_y"+suffix);candidate.xAddress.trim();candidate.yAddress.trim();candidate.deadband=server.arg("joy_deadband"+suffix).toInt();candidate.invertX=server.hasArg("joy_inv_x"+suffix);candidate.invertY=server.hasArg("joy_inv_y"+suffix);candidate.clickMode=server.arg("mode"+suffix).toInt()==MODE_SEQUENCE?MODE_SEQUENCE:MODE_PRESS_RELEASE;
-  auto number=[&](const String& name,float& value){String text=server.arg(name+suffix);char* end=nullptr;value=strtof(text.c_str(),&end);return end!=text.c_str()&&*end=='\0'&&isfinite(value);};String error;if(candidate.displayName.isEmpty()||candidate.displayName.length()>64||!validJsonAddress(candidate.xAddress,error)||!validJsonAddress(candidate.yAddress,error)||candidate.deadband<1||candidate.deadband>254||!number("joy_out_min",candidate.outputMin)||!number("joy_out_max",candidate.outputMax))return false;candidate.outputType=(ValueType)constrain(server.arg("joy_out_type"+suffix).toInt(),0,2);
+  const String suffix="_"+String(formIndex),identity=server.arg("identity"+suffix);JoystickSetting* current=nullptr;for(size_t i=0;i<joystickSettingsCount();++i){JoystickSetting* s=joystickSettingsAt(i);if(s&&s->identity==identity&&s->connectedPortMask){current=s;break;}}if(!current)return false;candidate=*current;candidate.displayName=server.arg("display_name"+suffix);candidate.displayName.trim();candidate.xAddress=server.arg("joy_x"+suffix);candidate.yAddress=server.arg("joy_y"+suffix);candidate.xAddress.trim();candidate.yAddress.trim();const bool validJoyDeadband=parseBoundedInteger(server.arg("joy_deadband"+suffix),1,254,candidate.deadband);candidate.invertX=server.hasArg("joy_inv_x"+suffix);candidate.invertY=server.hasArg("joy_inv_y"+suffix);candidate.clickMode=server.arg("mode"+suffix).toInt()==MODE_SEQUENCE?MODE_SEQUENCE:MODE_PRESS_RELEASE;
+  auto number=[&](const String& name,float& value){String text=server.arg(name+suffix);if(text.isEmpty())return false;errno=0;char* end=nullptr;value=strtof(text.c_str(),&end);return errno!=ERANGE&&end!=text.c_str()&&*end=='\0'&&isfinite(value);};String error;if(candidate.displayName.isEmpty()||candidate.displayName.length()>64||!validJsonAddress(candidate.xAddress,error)||!validJsonAddress(candidate.yAddress,error)||!validJoyDeadband||!number("joy_out_min",candidate.outputMin)||!number("joy_out_max",candidate.outputMax))return false;candidate.outputType=(ValueType)constrain(server.arg("joy_out_type"+suffix).toInt(),0,2);
   int pc=server.arg("p_count"+suffix).toInt(),rc=server.arg("r_count"+suffix).toInt();if(pc<0||rc<0||pc+rc>MAX_KEY_OSC_MESSAGES)return false;candidate.pressMessageCount=pc;candidate.releaseMessageCount=rc;bool valid=true;auto readMessages=[&](bool press){uint8_t count=press?candidate.pressMessageCount:candidate.releaseMessageCount;KeyOscMessage* messages=press?candidate.pressMessages:candidate.releaseMessages;const String prefix=press?"p":"r";for(uint8_t i=0;valid&&i<count;++i){String item=suffix+"_"+String(i);messages[i].address=server.arg(prefix+"_address"+item);messages[i].address.trim();messages[i].valueStr=server.arg(prefix+"_value"+item);messages[i].valueType=(ValueType)constrain(server.arg(prefix+"_type"+item).toInt(),0,2);String e;valid=validJsonAddress(messages[i].address,e)&&messages[i].valueStr.length()<=128;if(valid&&messages[i].valueType==TYPE_INT){int32_t parsed;valid=parseInt32(messages[i].valueStr,parsed);}else if(valid&&messages[i].valueType==TYPE_FLOAT){char* end=nullptr;float v=strtof(messages[i].valueStr.c_str(),&end);valid=end!=messages[i].valueStr.c_str()&&*end=='\0'&&isfinite(v);}}};readMessages(true);readMessages(false);
   candidate.clickSequence.address=server.arg("seq_address"+suffix);candidate.clickSequence.address.trim();valid=valid&&validJsonAddress(candidate.clickSequence.address,error)&&number("seq_start",candidate.clickSequence.start)&&number("seq_end",candidate.clickSequence.end)&&number("seq_step",candidate.clickSequence.step);candidate.clickSequence.valueType=(ValueType)constrain(server.arg("seq_type"+suffix).toInt(),0,2);keySettingsNormalizeSequence(candidate.clickSequence);return valid;
 }

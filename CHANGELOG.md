@@ -6,6 +6,17 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-09-03
+
+### Added
+
+- 通常Web UIとAP Modeのキャプティブポータルに、製品ポータルと同じfaviconを追加
+
+### Changed
+
+- M5ChainOSCに合わせ、Encoder、Joystick、Angle、ToFおよびクリック時Sequenceの入力中・保存時検証を強化
+- 数値範囲、不感帯、最大距離の警告表示を欄直下の赤色メッセージへ統一
+
 ## [1.2.1] - 2026-09-02
 
 ### Added
@@ -178,7 +189,8 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 - M5NanoC6内蔵RGB LEDの初期化
 - v0.1.0向けREADME、テスト手順、第三者ライセンス表記
 
-[Unreleased]: https://github.com/shimez/ChainOSCnano/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/shimez/ChainOSCnano/compare/v1.2.2...HEAD
+[1.2.2]: https://github.com/shimez/ChainOSCnano/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/shimez/ChainOSCnano/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/shimez/ChainOSCnano/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/shimez/ChainOSCnano/compare/v1.0.0...v1.1.0

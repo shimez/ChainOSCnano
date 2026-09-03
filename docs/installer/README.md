@@ -2,8 +2,9 @@
 
 ChainOSCnanoのファームウェアをM5NanoC6へブラウザーから書き込むためのWeb Installerです。
 
-現在の公開版は`1.2.1`です。
+現在の公開版は`1.2.2`です。
 
+- Version 1.2.2: Web UIの入力検証を強化し、通常画面とAP Modeへfaviconを追加
 - Version 1.2.1: AP Modeのキャプティブポータルから全設定を削除する機能を追加
 - Version 1.2.0: Web UIからLittleFSとNVSの全設定を削除して再起動する機能を追加
 
@@ -20,7 +21,7 @@ https://shimez.github.io/ChainOSCnano/installer/
 GitHub ActionsがPlatformIOでmergedバイナリを生成してGitHub Releaseへ添付します。Releaseを公開すると、Pages Workflowが同じバイナリをPages成果物へ組み込みます。
 
 ```text
-installer/firmware/ChainOSCnano-1.2.1-M5NanoC6-merged.bin
+installer/firmware/ChainOSCnano-1.2.2-M5NanoC6-merged.bin
 ```
 
 `manifest.json`はこのファイルをESP32-C6のoffset `0x0`へ書き込みます。
