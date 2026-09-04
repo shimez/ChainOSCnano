@@ -11,7 +11,7 @@ M5NanoC6とM5Stack Chainデバイスを組み合わせ、コンパクトなOSC�
 
 ## 現在のバージョン
 
-### v1.2.2 — 入力検証とfavicon表示をシリーズで統一
+### v1.2.3 — 入力検証とfavicon表示をシリーズで統一
 
 通常Web UIに加え、AP Modeのキャプティブポータルからも、確認後にLittleFSとNVSの全設定を削除して本体を再起動できるようにしました。
 
@@ -111,7 +111,7 @@ v0.8.0では次の保存機能を追加・変更しています。
 - 現行compact NVS設定からLittleFSへの自動移行
 - 設定ファイルサイズとLittleFSの総容量・使用量・空き容量をシリアルログへ出力
 
-v1.2.2ではEncoder、Joystick、Angle、ToF、Sequenceの入力検証を強化し、通常Web UIとAP Modeへ製品faviconを追加しました。
+v1.2.3ではEncoder、Joystick、Angle、ToF、Sequenceの入力検証を強化し、通常Web UIとAP Modeへ製品faviconを追加しました。
 
 - Device Preset Import Error Registry v1の全22エラーコードに対応
 - JSON構文、必須項目、JSON型、OSC設定、Sequence、デバイス固有値・範囲を検証

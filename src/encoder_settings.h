@@ -9,6 +9,9 @@ struct EncoderSetting {
   String displayName;
   String rotationAddress = "/avatar/parameters/Encoder";
   bool sendIncrement = false;
+  bool wrapAround = true;
+  float boundedAbsolute = 0;
+  bool boundedAbsoluteInitialized = false;
   float absoluteInputMin = 0;
   float absoluteInputMax = 20;
   float incrementScale = 0.05f;
@@ -33,4 +36,3 @@ bool encoderSettingsSave(const EncoderSetting& candidate);
 bool encoderSettingsDelete(const String& identity);
 void encoderSettingsBeginPortUpdate(uint8_t portMask);
 void encoderSettingsMarkConnected(const String& identity, uint8_t portMask);
-

@@ -57,6 +57,7 @@ bool sameSetting(const EncoderSetting& left, const EncoderSetting& right) {
   if (left.identity != right.identity || left.displayName != right.displayName ||
       left.rotationAddress != right.rotationAddress ||
       left.sendIncrement != right.sendIncrement ||
+      left.wrapAround != right.wrapAround ||
       fabsf(left.absoluteInputMin - right.absoluteInputMin) > 0.00001f ||
       fabsf(left.absoluteInputMax - right.absoluteInputMax) > 0.00001f ||
       fabsf(left.incrementScale - right.incrementScale) > 0.00001f ||
@@ -185,6 +186,7 @@ bool encoderSettingsSave(const EncoderSetting& candidate) {
   const uint8_t portMask = destination->connectedPortMask;
   *destination = candidate;
   destination->connectedPortMask = portMask;
+  destination->boundedAbsoluteInitialized = false;
   keySettingsNormalizeSequence(destination->clickSequence);
   NANO_VERBOSE_LOGF("[ChainOSCnano][ENCCFG] saved identity=%s mode=%u press=%u release=%u\n",
                 candidate.identity.c_str(),

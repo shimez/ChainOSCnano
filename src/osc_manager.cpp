@@ -147,9 +147,23 @@ void sendEncoderRotationValue(EncoderSetting& setting, int16_t absoluteValue,
     const float span = setting.absoluteInputMax - setting.absoluteInputMin;
     float input = static_cast<float>(absoluteValue);
     if (fabsf(span) > 1e-6f) {
-      input = fmodf(input - setting.absoluteInputMin, span);
-      if (input < 0) input += span;
-      input += setting.absoluteInputMin;
+      if (setting.wrapAround) {
+        setting.boundedAbsoluteInitialized = false;
+        input = fmodf(input - setting.absoluteInputMin, span);
+        if (input < 0) input += span;
+        input += setting.absoluteInputMin;
+      } else {
+        if (!setting.boundedAbsoluteInitialized) {
+          setting.boundedAbsolute =
+              constrain(input, setting.absoluteInputMin, setting.absoluteInputMax);
+          setting.boundedAbsoluteInitialized = true;
+        } else {
+          setting.boundedAbsolute = constrain(
+              setting.boundedAbsolute + delta, setting.absoluteInputMin,
+              setting.absoluteInputMax);
+        }
+        input = setting.boundedAbsolute;
+      }
       const float ratio = (input - setting.absoluteInputMin) / span;
       mapped = setting.outputMin + ratio * (setting.outputMax - setting.outputMin);
     } else {

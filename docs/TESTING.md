@@ -34,7 +34,7 @@ PlatformIOでのビルドと書き込みは、使用するPC環境で別途確�
 
 115200 bpsでシリアルモニターを開き、次の内容を確認します。
 
-- `ChainOSCnano v1.2.2`が表示される
+- `ChainOSCnano v1.2.3`が表示される
 - チップがESP32-C6として表示される
 - Flash容量が4 MBとして表示される
 - PSRAMが0 bytesとして表示される

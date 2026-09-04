@@ -127,7 +127,7 @@ button{width:100%;padding:12px;background:#28a745;color:#fff;border:none;border-
 .event-tabs{display:flex;gap:4px;padding:4px;background:#edf0f4;border-radius:9px}.event-tab{margin:0;background:transparent;color:#697586}.event-tab.active{background:#fff;color:#18212f;box-shadow:0 1px 4px #bbb}
 .event-panel{margin-top:12px}.osc-list{display:grid;gap:10px}.osc-row{display:grid;grid-template-columns:62px minmax(180px,1fr) 115px minmax(100px,.55fr) 68px;gap:9px;align-items:start;padding:12px;border:1px solid #dce2ea;border-radius:10px;background:#fbfcfe}.osc-row label{margin-top:0}.order{display:flex;gap:3px;align-self:center}.mv{width:auto;margin:0;padding:7px;background:#fff;color:#526075;border:1px solid #dce2ea}.remove-msg{width:auto;margin-top:22px;padding:9px;background:#fff3f4;color:#c73c4a;border:1px solid #efc6cb}.add-msg{background:#f7faff;color:#3267e3;border:1px dashed #9db6ef}.add-msg:disabled{background:#eee;color:#888}.empty{display:none;padding:18px;text-align:center;color:#697586;border:1px dashed #dce2ea;border-radius:9px}.osc-list:empty+.empty{display:block}
 .sequence-card{margin-top:12px;padding:15px;border:1px solid #dce2ea;border-radius:10px;background:#fbfcfe}.sequence-card h3{margin-top:0}.seq-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.seq-address{grid-column:1/-1}
-.encoder-rotation{margin-top:12px;padding:14px;border-left:5px solid #fd7e14;background:#f8f9fa}.encoder-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.encoder-address{grid-column:1/-1}.encoder-mode-hidden{visibility:hidden;pointer-events:none}.angle-section,.tof-section{margin-top:12px;padding:14px;border-left:5px solid #6610f2;background:#f8f9fa}.joystick-section{margin-top:12px;padding:14px;border-left:5px solid #e83e8c;background:#f8f9fa}.angle-grid,.tof-grid,.joystick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.angle-address,.tof-address,.joystick-address,.joystick-invert{grid-column:1/-1}.angle-section h3,.tof-section h3,.joystick-section h3{margin:0 0 8px}.joystick-invert{display:flex;gap:18px;flex-wrap:wrap}.joystick-invert label{display:flex;align-items:center;gap:6px;margin:0}.joystick-invert input{width:auto;margin:0}.click-section{margin-top:14px;padding:14px;border-left:5px solid #28a745;background:#f8f9fa}.click-section h3,.encoder-rotation h3{margin:0 0 8px}
+.encoder-rotation{margin-top:12px;padding:14px;border-left:5px solid #fd7e14;background:#f8f9fa}.encoder-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.encoder-address{grid-column:1/-1}.encoder-mode-hidden{visibility:hidden;pointer-events:none}.wrap-setting label{display:flex;align-items:center;gap:6px;margin:0}.wrap-setting input{width:auto;margin:0}.angle-section,.tof-section{margin-top:12px;padding:14px;border-left:5px solid #6610f2;background:#f8f9fa}.joystick-section{margin-top:12px;padding:14px;border-left:5px solid #e83e8c;background:#f8f9fa}.angle-grid,.tof-grid,.joystick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.angle-address,.tof-address,.joystick-address,.joystick-invert{grid-column:1/-1}.angle-section h3,.tof-section h3,.joystick-section h3{margin:0 0 8px}.joystick-invert{display:flex;gap:18px;flex-wrap:wrap}.joystick-invert label{display:flex;align-items:center;gap:6px;margin:0}.joystick-invert input{width:auto;margin:0}.click-section{margin-top:14px;padding:14px;border-left:5px solid #28a745;background:#f8f9fa}.click-section h3,.encoder-rotation h3{margin:0 0 8px}
 .save-bar{position:sticky;z-index:15;bottom:8px;display:flex;align-items:center;gap:12px;padding:10px 12px;margin:16px 0 28px;background:rgba(255,255,255,.96);border:1px solid #dce2ea;border-radius:10px;box-shadow:0 5px 18px rgba(0,0,0,.14)}.save-bar button{flex:1;margin:0;background:#28a745}.dirty-status{color:#b45f06;font-weight:bold;white-space:nowrap}.saved-device-card h2{display:flex;align-items:center;gap:4px;flex-wrap:wrap}.btn-warning{background:#ff9800}.toast{position:fixed;z-index:30;left:50%;bottom:78px;transform:translateX(-50%);padding:11px 18px;border-radius:8px;background:#17324d;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.25)}.wifi-actions{margin-top:28px}.wifi-actions form{margin:0}.danger-zone{margin-top:28px;border-left-color:#dc3545}.danger-zone button{width:100%;margin:0;background:#dc3545}
 .language-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.language-row h2{margin:0}.language-row form{margin:0;min-width:150px}.language-row select{margin:0}
 .device-menu-wrap{position:relative}.device-menu-button{width:32px;height:30px;margin:0;padding:0;background:#f1f4f8;color:#42516a;border:1px solid #dce2ea;border-radius:7px;font-size:18px}.device-menu{position:absolute;z-index:20;right:0;top:36px;width:235px;padding:7px;border:1px solid #dce2ea;border-radius:9px;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.18)}.device-menu[hidden]{display:none}.device-menu a,.device-menu button{display:block;width:100%;margin:0;padding:10px;border:0;border-radius:6px;background:#fff;color:#253047;text-align:left;text-decoration:none;font-size:14px}.device-menu a:hover,.device-menu button:hover{background:#f1f4f8}.tool-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tool-row a,.tool-row button{display:block;margin:0;padding:12px;border-radius:6px;background:#3267e3;color:#fff;text-align:center;text-decoration:none;font-size:16px}.import-status{min-height:20px;margin:9px 0 0;color:#526075;font-size:.9em}
@@ -293,6 +293,7 @@ String encoderSettingJson(const EncoderSetting& setting, bool includeIdentity) {
             jsonString(setting.rotationAddress) +
             ",\"sendIncrement\":" +
             String(setting.sendIncrement ? "true" : "false") +
+            ",\"wrapAround\":" + String(setting.wrapAround ? "true" : "false") +
             ",\"absoluteInputMin\":" + String(setting.absoluteInputMin, 6) +
             ",\"absoluteInputMax\":" + String(setting.absoluteInputMax, 6) +
             ",\"incrementScale\":" + String(setting.incrementScale, 6) +
@@ -556,6 +557,7 @@ bool validateDevicePreset(JsonObjectConst root, int deviceType, bool legacy,
     if (!hasPresetFields(encoder, required, 10, error)) return false;
     if (!encoder["rotationAddress"].is<const char*>() ||
         !encoder["sendIncrement"].is<bool>() ||
+        (encoder.containsKey("wrapAround") && !encoder["wrapAround"].is<bool>()) ||
         !encoder["absoluteInputMin"].is<float>() ||
         !encoder["absoluteInputMax"].is<float>() ||
         !encoder["incrementScale"].is<float>() ||
@@ -838,6 +840,7 @@ bool encoderSettingFromJson(JsonObjectConst object, EncoderSetting& candidate,
   candidate.rotationAddress = encoder["rotationAddress"].as<const char*>();
   candidate.rotationAddress.trim();
   candidate.sendIncrement = encoder["sendIncrement"] | false;
+  candidate.wrapAround = encoder["wrapAround"] | true;
   candidate.absoluteInputMin = encoder["absoluteInputMin"].as<float>();
   candidate.absoluteInputMax = encoder["absoluteInputMax"].as<float>();
   candidate.incrementScale = encoder["incrementScale"].as<float>();
@@ -1186,6 +1189,7 @@ void appendEncoderCard(String& html, const EncoderSetting& setting,
   const String absHiddenClass = setting.sendIncrement ? " encoder-mode-hidden" : "";
   html += "<div class='encoder-absolute-setting" + absHiddenClass + "'><label>" + String(tr("Abs In Min", "絶対値入力の最小値")) + "</label><input type='number' step='any' name='enc_abs_min_" + idx + "' value='" + String(setting.absoluteInputMin, 7) + "'></div>";
   html += "<div class='encoder-absolute-setting" + absHiddenClass + "'><label>" + String(tr("Abs In Max", "絶対値入力の最大値")) + "</label><input type='number' step='any' name='enc_abs_max_" + idx + "' value='" + String(setting.absoluteInputMax, 7) + "'></div>";
+  html += "<div class='encoder-absolute-setting wrap-setting" + absHiddenClass + "'><label><input type='checkbox' name='enc_wrap_" + idx + "'" + String(setting.wrapAround ? " checked" : "") + "> " + String(tr("Wrap around", "範囲をループする")) + "</label></div>";
   html += "<div><label>" + String(tr("Inc Scale", "増分倍率")) + "</label><input type='number' step='any' name='enc_scale_" + idx + "' value='" + String(setting.incrementScale, 7) + "'></div>";
   html += "<div><label>" + String(tr("Out Min", "出力最小値")) + "</label><input type='number' step='any' name='enc_out_min_" + idx + "' value='" + String(setting.outputMin, 7) + "'></div>";
   html += "<div><label>" + String(tr("Out Max", "出力最大値")) + "</label><input type='number' step='any' name='enc_out_max_" + idx + "' value='" + String(setting.outputMax, 7) + "'></div>";
@@ -1663,6 +1667,7 @@ bool readEncoderSetting(size_t formIndex, EncoderSetting& candidate) {
   candidate.rotationAddress = server.arg("enc_rotation" + suffix);
   candidate.rotationAddress.trim();
   candidate.sendIncrement = server.arg("enc_increment" + suffix).toInt() != 0;
+  candidate.wrapAround = server.hasArg("enc_wrap" + suffix);
 
   auto readFloat = [&](const String& name, float& value) {
     const String text = server.arg(name + suffix);
