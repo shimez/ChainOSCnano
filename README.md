@@ -11,112 +11,15 @@ M5NanoC6とM5Stack Chainデバイスを組み合わせ、コンパクトなOSC�
 
 ## 現在のバージョン
 
-### v1.2.3 --- Encoderの範囲ループ設定に対応
+### v1.2.3 — Encoderの範囲ループ設定に対応
 
 Encoderの絶対値モードに、最小値／最大値で停止するか範囲をループするかを選択できる設定を追加しました。
 
-v0.1.0の実機検証では次の項目を確認済みです。
+- 「範囲をループする」設定を追加
+- Device Presetの`wrapAround`を保存・復元
+- `wrapAround`省略時は従来互換としてループ有効で動作
 
-- GPIO19をHIGHにしてChainデバイスへ給電できる
-- GPIO1／GPIO2のUART（115200 bps）でChainデバイスを検出できる
-- ChainデバイスのID、種類、UIDを取得できる
-- 4台のChain Keyを同時に認識できる
-- Chainデバイスの抜き差しと、1台から4台までの段階的な再接続を検出できる
-- 診断中の空きヒープが約425 KBで安定している
-- 内蔵RGB LEDを初期化できる
-
-v0.2.0では、実機で次の動作を確認済みです。
-
-- 4台のChain Keyについて、押した時／離した時をUID付きで取得できる
-- 複数のChain Keyを同時に操作しても、ID・UID・入力状態が正しく対応する
-- 認識した対応Chainデバイスを青、押しているChain Keyをオレンジで点灯できる
-- 抜き差しや接続順変更後も、UID・入力・LEDの対応を維持できる
-- 不安定な接続中の偽入力を破棄し、通信エラー時に直前の状態を維持する
-- 切断後にUARTを自動復旧し、本体を再起動せず再接続できる
-- 入力監視とUART再初期化を繰り返しても、空きヒープが約425 KBで安定する
-
-v0.3.0では次のネットワーク機能を追加しています。
-
-- Wi-Fi設定がない場合は`ChainOSCnano-Setup`というAPを起動する
-- APのパスワードは`12345678`
-- キャプティブポータルまたは`http://192.168.4.1/`からWi-Fiを設定する
-- 保存済みWi-Fiへの起動時接続が失敗した場合はAP Modeへ移行する
-- 接続後は`http://chainoscnano.local/`またはIPアドレスで状態を確認する
-- 接続後にWi-Fiが切断された場合は、AP Modeへ戻らず自動再接続する
-- ブラウザーからWi-Fi設定を削除してセットアップ状態へ戻せる
-
-v0.4.0では次のOSC機能を追加しています。
-
-- OSC送信先のIPv4アドレスとUDPポートをブラウザーから設定できる
-- OSC送信先を保存し、再起動後も復元できる
-- Chain Keyを押した時に`Int 1`、離した時に`Int 0`を送信する
-- UIDを含む固定OSC Addressを使用し、抜き差しや接続順変更の影響を受けない
-- Wi-Fi切断中はOSC送信を抑止し、再接続後に自動的に送信を再開する
-
-初期OSC送信先は`192.168.1.100:9000`です。各Chain Keyの初期OSC Addressは次の形式です。
-
-```text
-/chainoscnano/key/<24桁UID>
-```
-
-例：
-
-```text
-/chainoscnano/key/78000C001651343430383836
-```
-
-v0.5.0では次のKey設定機能を追加しています。
-
-- 接続中のChain KeyをUID単位のカードとして表示
-- デバイス名の設定
-- 「押した時／離した時」と「シーケンス」のモード切り替え
-- Press／Release合計8件までのOSCメッセージ
-- OSC Address、Float／Int／String、値の設定
-- メッセージの追加、削除、並べ替え
-- 0件の場合は該当イベントでOSCを送信しない
-- SequenceのAddress、開始値、終了値、増減量、型、周回動作
-- SequenceモードのKeyを押した時はChain KeyのLEDを緑色で表示
-- UID単位のデバイス設定と、Wi-Fi・OSC送信先・Web UI言語のLittleFS保存および再起動後の復元
-- ChainデバイスはUID全体、本体ボタンは`NanoButton.json`を設定ファイル名として使用
-- 一時ファイルの検証後に置換する安全な保存処理と、現行compact NVS設定からの自動移行
-- 設定ファイルサイズおよびLittleFSの総容量・使用量・空き容量をシリアルログへ出力
-- 保存済みデバイス設定は全種類合計で最大40台
-- 接続中デバイスと保存済み未接続デバイスの分離表示
-- 未接続デバイス設定の削除
-
-v0.6.0では次の機能を追加しています。
-
-- Chain Encoder、Chain Angle、Chain ToF、Chain Joystickへの対応
-- 各デバイスの設定、OSC送信、UID単位の保存と復元
-- ChainOSCnano全体設定のバージョン付きJSONエクスポート／インポート
-- デバイス単位のJSONプリセットのエクスポート／インポート
-- `ChainOSC-device-preset`形式によるM5ChainOSC／ChainOSCminiとのプリセット互換
-- Key／Encoderクリック／Joystickクリックの複数メッセージとSequence設定
-- デバイスカードの「…」メニューと10秒間のオレンジLED識別
-- 不正なJSON、異なるデバイス種類、入力値、容量の検証
-
-v0.7.0では次の機能を追加しています。
-
-- M5NanoC6本体ボタンをWeb UIの内蔵Keyとして表示
-- 本体ボタンのPress／Release、複数OSCメッセージ、Sequence設定
-- 本体ボタン設定の保存・復元とJSONプリセット入出力
-- 本体ボタン押下中とIdentify Device実行中のオレンジLED表示
-- ChainOSCnanoポータル、Web Installer、faviconのアンバー系デザイン
-
-v0.8.0では次の保存機能を追加・変更しています。
-
-- Key、Encoder、Angle、ToF、Joystick設定をLittleFSへ保存
-- ChainデバイスはUID全体、本体ボタンは`NanoButton.json`をファイル名として使用
-- 一時ファイルの検証後に既存設定を置換し、書き込み失敗時も既存設定を維持
-- 現行compact NVS設定からLittleFSへの自動移行
-- 設定ファイルサイズとLittleFSの総容量・使用量・空き容量をシリアルログへ出力
-
-v1.2.3ではEncoder、Joystick、Angle、ToF、Sequenceの入力検証を強化し、通常Web UIとAP Modeへ製品faviconを追加しました。
-
-- Device Preset Import Error Registry v1の全22エラーコードに対応
-- JSON構文、必須項目、JSON型、OSC設定、Sequence、デバイス固有値・範囲を検証
-- エラーコードと日本語・英語メッセージをChainOSCシリーズの共通仕様へ統一
-- 不正なプリセットを既存設定を変更せずに拒否
+過去の変更内容は[`CHANGELOG.md`](CHANGELOG.md)を参照してください。
 
 ## ドキュメントとファームウェア
 
