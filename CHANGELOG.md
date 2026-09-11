@@ -4,9 +4,9 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 
 形式はKeep a Changelogを参考にし、バージョン番号はSemantic Versioningに従います。
 
-## [Unreleased]
+## [Unreleased](https://github.com/shimez/ChainOSCnano/compare/v1.2.3...HEAD)
 
-## [1.2.3] - 2026-09-04
+## [1.2.3](https://github.com/shimez/ChainOSCnano/compare/v1.2.2...v1.2.3) - 2026-09-04
 
 ### Added
 
@@ -17,7 +17,7 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 - 「範囲をループする」のチェックボックスとラベルを横並びで中央揃えに調整
 - Device PresetのwrapAroundを保存・復元し、省略時は従来互換のループ有効として扱う
 
-## [1.2.2] - 2026-09-03
+## [1.2.2](https://github.com/shimez/ChainOSCnano/compare/v1.2.1...v1.2.2) - 2026-09-03
 
 ### Added
 
@@ -34,13 +34,13 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 
 - AP Modeのキャプティブポータル最下段に、全設定を削除して再起動する赤色ボタンを追加
 
-## [1.2.0] - 2026-09-01
+## [1.2.0](https://github.com/shimez/ChainOSCnano/compare/v1.1.0...v1.2.0) - 2026-09-01
 
 ### Added
 
 - Web UI最下段に、確認後にLittleFSとNVSの全設定を削除して再起動する赤色ボタンを追加
 
-## [1.1.0] - 2026-08-31
+## [1.1.0](https://github.com/shimez/ChainOSCnano/compare/v1.0.0...v1.1.0) - 2026-08-31
 
 ### Added
 
@@ -52,7 +52,7 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 - Wi-Fi認証情報、OSC送信先、Web UI言語の保存先をNVSからLittleFSへ変更
 - 初回起動時に既存のNVS設定をLittleFSへ自動移行
 
-## [1.0.0] - 2026-08-30
+## [1.0.0](https://github.com/shimez/ChainOSCnano/compare/v0.8.0...v1.0.0) - 2026-08-30
 
 ### Added
 
@@ -71,7 +71,7 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 - インポート失敗時に既存のデバイス設定が変更される可能性がある問題を修正
 - 未対応デバイス種別とインポート先デバイスの不一致を区別して通知
 
-## [0.8.0] - 2026-08-29
+## [0.8.0](https://github.com/shimez/ChainOSCnano/compare/v0.7.0...v0.8.0) - 2026-08-29
 
 ### Added
 
@@ -90,7 +90,7 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 
 - NVSの空きentryが残っていても大きなKey設定を書き込めず、既存設定を失う可能性がある問題を解消
 
-## [0.7.0] - 2026-08-24
+## [0.7.0](https://github.com/shimez/ChainOSCnano/compare/v0.6.0...v0.7.0) - 2026-08-24
 
 ### Added
 
@@ -104,7 +104,7 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 - ChainOSCnanoポータルとWeb Installerをアンバー系のブランドカラーへ変更
 - faviconを他のChainOSCシリーズと共通の鎖モチーフへ統一
 
-## [0.6.0] - 2026-08-24
+## [0.6.0](https://github.com/shimez/ChainOSCnano/compare/v0.5.0...v0.6.0) - 2026-08-24
 
 ### Added
 
@@ -121,7 +121,7 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 - ChainOSCminiの設定モデル、検証、Web UI、デバイス処理を共通基盤として移植
 - PlatformIOのアプリ領域を`huge_app.csv`へ変更
 
-## [0.5.0] - 2026-08-24
+## [0.5.0](https://github.com/shimez/ChainOSCnano/compare/v0.4.0...v0.5.0) - 2026-08-24
 
 ### Added
 
@@ -137,7 +137,7 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 - 保存済み未接続デバイス設定の削除
 - 一括保存前のAddress、値、件数、Sequenceの検証
 
-## [0.4.0] - 2026-08-24
+## [0.4.0](https://github.com/shimez/ChainOSCnano/compare/v0.3.0...v0.4.0) - 2026-08-24
 
 ### Added
 
@@ -149,7 +149,7 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 - OSC送信・抑止内容のシリアル診断ログ
 - ArduinoOSCのPlatformIO依存関係と第三者ライセンス表記
 
-## [0.3.0] - 2026-08-24
+## [0.3.0](https://github.com/shimez/ChainOSCnano/compare/v0.2.0...v0.3.0) - 2026-08-24
 
 ### Added
 
@@ -165,7 +165,7 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 - 本体RGB LEDによる接続中・接続済み・AP Modeの状態表示
 - Wi-Fi接続中・再接続中を識別する本体RGB LEDの青色点滅
 
-## [0.2.0] - 2026-08-24
+## [0.2.0](https://github.com/shimez/ChainOSCnano/compare/v0.1.0...v0.2.0) - 2026-08-24
 
 ### Added
 
@@ -186,7 +186,7 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 - Chainデバイスの構成変更中に旧IDから偽の入力イベントが発生する問題
 - Chainデバイスを抜き差しした際、まれにUARTが再接続できない問題
 
-## [0.1.0] - 2026-08-24
+## [0.1.0](https://github.com/shimez/ChainOSCnano/releases/tag/v0.1.0) - 2026-08-24
 
 ### Added
 
@@ -200,17 +200,3 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 - M5NanoC6内蔵RGB LEDの初期化
 - v0.1.0向けREADME、テスト手順、第三者ライセンス表記
 
-[Unreleased]: https://github.com/shimez/ChainOSCnano/compare/v1.2.2...HEAD
-[1.2.2]: https://github.com/shimez/ChainOSCnano/compare/v1.2.1...v1.2.2
-[1.2.1]: https://github.com/shimez/ChainOSCnano/compare/v1.2.0...v1.2.1
-[1.2.0]: https://github.com/shimez/ChainOSCnano/compare/v1.1.0...v1.2.0
-[1.1.0]: https://github.com/shimez/ChainOSCnano/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/shimez/ChainOSCnano/compare/v0.8.0...v1.0.0
-[0.8.0]: https://github.com/shimez/ChainOSCnano/compare/v0.7.0...v0.8.0
-[0.7.0]: https://github.com/shimez/ChainOSCnano/compare/v0.6.0...v0.7.0
-[0.6.0]: https://github.com/shimez/ChainOSCnano/compare/v0.5.0...v0.6.0
-[0.5.0]: https://github.com/shimez/ChainOSCnano/compare/v0.4.0...v0.5.0
-[0.4.0]: https://github.com/shimez/ChainOSCnano/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/shimez/ChainOSCnano/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/shimez/ChainOSCnano/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/shimez/ChainOSCnano/releases/tag/v0.1.0
