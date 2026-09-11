@@ -54,7 +54,9 @@ Configure X/Y Addresses, axis inversion, deadband, output range, and type. Joyst
 
 ## Device menu and presets
 
-The `...` menu exports or imports a UID-free `ChainOSC-device-preset` JSON file and can identify a device with an orange LED for ten seconds. Presets are compatible with the same device type in M5ChainOSC and ChainOSCmini.
+The `...` menu exports or imports a UID-free `ChainOSC-device-preset` JSON file and can identify a device with an orange LED for ten seconds. Presets are compatible with the same device type on other ChainOSC devices.
+
+[ChainOSC Device Presets](https://github.com/shimez/ChainOSC/tree/main/presets) provides sample device presets for VRChat and other uses. Download a JSON file and import it to use the preset.
 
 ## Backup and restore
 

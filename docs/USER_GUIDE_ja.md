@@ -62,7 +62,9 @@ X／YのOSC Address、X軸／Y軸反転、不感帯、出力最小値／最大�
 
 ## デバイスメニュー
 
-各カード右上の「…」から、デバイスプリセットのエクスポート／インポートと、デバイスLEDを10秒間オレンジにする識別機能を利用できます。プリセットはUIDを含まない`ChainOSC-device-preset`形式で、同種デバイスならM5ChainOSC／ChainOSCminiと共有できます。
+各カード右上の「…」から、デバイスプリセットのエクスポート／インポートと、デバイスLEDを10秒間オレンジにする識別機能を利用できます。プリセットはUIDを含まない`ChainOSC-device-preset`形式で、同種デバイスなら他のChainOSCデバイスと共有できます。
+
+[ChainOSC Device Presets](https://github.com/shimez/ChainOSC/tree/main/presets)では、VRChatなどで利用できるデバイスプリセットのサンプルを公開しています。ダウンロードしたJSONファイルをインポートして利用できます。
 
 ## バックアップと復元
 
