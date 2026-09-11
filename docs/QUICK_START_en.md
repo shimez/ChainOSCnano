@@ -10,8 +10,7 @@ permalink: /en/quick-start/
 
 ## What you need
 
-- M5NanoC6 and supported M5Stack Chain devices
-- Wiring or an adapter for GND, 5V, GPIO2, and GPIO1
+- M5NanoC6
 - A USB Type-C data cable
 - A 2.4 GHz Wi-Fi network
 - A computer running VRChat
@@ -48,9 +47,9 @@ The Web UI has no authentication. Use ChainOSCnano only on a trusted local netwo
 1. In **OSC Destination**, enter the IPv4 address of the PC running VRChat in **Hostname or IPv4 address**.
 2. Enter `9000` in **UDP Port**.
 
-## 7. Configure a Voice action on a Key
+## 7. Configure a Voice action on the M5NanoC6 built-in Key
 
-On a connected Chain Key, select **Press** and enter the following values:
+In the **M5NanoC6** card, select **Press** and enter the following values. The default device name is **M5NanoC6 Button**.
 
 - OSC Address: `/input/Voice`
 - Type: `Int`
@@ -65,7 +64,7 @@ Switch to **Release** and enter the following values:
 ## 8. Save and verify the action
 
 1. Select **Save All Settings**.
-2. With VRChat running and OSC enabled, operate the configured Chain Key.
+2. With VRChat running and OSC enabled, operate the M5NanoC6 built-in Key.
 3. Confirm that VRChat's Voice input state changes. This confirms that ChainOSCnano sent an OSC message.
 
 ChainOSCnano is not limited to VRChat. For another OSC-compatible application, set the destination, OSC Address, type, and value for that application. Device Preset can be used to reuse and share frequently used settings; see the [English User Guide](../user-guide/) for details.

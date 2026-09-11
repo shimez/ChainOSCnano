@@ -11,8 +11,6 @@ permalink: /quick-start/
 ## 用意するもの
 
 - M5NanoC6
-- M5Stack Chainデバイス
-- GND／5V／GPIO2／GPIO1を接続する配線または変換基板
 - データ通信対応USB Type-Cケーブル
 - 2.4 GHz帯Wi-Fi
 - VRChatを実行するPC
@@ -56,9 +54,9 @@ Resolve-DnsName chainoscnano.local
 1. 「OSC送信先」の「ホスト名またはIPv4アドレス」に、VRChatを実行しているPCのIPv4アドレスを入力します。
 2. 「UDPポート」に`9000`を入力します。
 
-## 7. KeyにVoice操作を設定する
+## 7. M5NanoC6本体のKeyにVoice操作を設定する
 
-接続中のChain Keyの設定で、まず「押した時」に次の値を手入力します。
+設定画面の「M5NanoC6」カードで、まず「押した時」に次の値を手入力します。デフォルトのデバイス名は「M5NanoC6 Button」です。
 
 - OSCアドレス：`/input/Voice`
 - 型：`Int`
@@ -73,7 +71,7 @@ Resolve-DnsName chainoscnano.local
 ## 8. 保存して動作を確認する
 
 1. 「すべての設定を保存」を押します。
-2. VRChatが起動していてOSCが有効な状態で、設定したChain Keyを操作します。
+2. VRChatが起動していてOSCが有効な状態で、M5NanoC6本体のKeyを操作します。
 3. VRChatのVoice入力状態が切り替わることを確認します。Voiceが切り替われば、ChainOSCnanoからOSCメッセージを送信できています。
 
 VRChat以外のOSC対応アプリケーションでも、送信先、OSC Address、型、値をそのアプリケーションに合わせて設定すれば利用できます。よく使う設定の再利用・共有にはDevice Presetを利用できます。詳しくは[日本語ユーザーガイド](../user-guide/)を参照してください。
