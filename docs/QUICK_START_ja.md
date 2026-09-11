@@ -15,7 +15,7 @@ permalink: /quick-start/
 - GND／5V／GPIO2／GPIO1を接続する配線または変換基板
 - データ通信対応USB Type-Cケーブル
 - 2.4 GHz帯Wi-Fi
-- OSC受信アプリを実行するPC
+- VRChatを実行するPC
 - デスクトップ版ChromeまたはEdge
 
 ## 1. ファームウェアを書き込む
@@ -33,7 +33,15 @@ permalink: /quick-start/
 
 本体RGB LEDは、赤がAP Mode、青点滅が接続中、水色が接続済みです。
 
-## 3. 設定画面を開く
+## 3. VRChatでOSCを有効にする
+
+VRChatを起動し、リングメニュー → オプション → OSC → 有効に設定します。
+
+## 4. VRChatを実行しているPCのIPv4アドレスを確認する
+
+WindowsでPowerShellまたはコマンドプロンプトを開き、`ipconfig`を実行します。ChainOSCnanoと同じネットワークに接続しているWi-FiまたはEthernetアダプターの`IPv4 Address`を確認してください。VPNや仮想アダプターではなく、実際に接続中のアダプターを選びます。
+
+## 5. 設定画面を開く
 
 ブラウザーで`http://chainoscnano.local/`を開きます。Windowsで開けない場合はPowerShellで次を実行し、表示されたIPv4アドレスをブラウザーで開きます。
 
@@ -43,11 +51,29 @@ Resolve-DnsName chainoscnano.local
 
 設定画面には認証機能がありません。信頼できるローカルネットワークで使用してください。
 
-## 4. OSCを送信する
+## 6. OSC送信先を設定する
 
-1. 「OSC送信先」に受信PCのIPv4アドレスとUDPポートを設定します。
-2. 接続中のChainデバイスでOSC Address、型、値を設定します。
-3. 「すべての設定を保存」を押します。
-4. デバイスを操作し、受信アプリでOSCメッセージを確認します。
+1. 「OSC送信先」の「ホスト名またはIPv4アドレス」に、VRChatを実行しているPCのIPv4アドレスを入力します。
+2. 「UDPポート」に`9000`を入力します。
 
-詳しい項目は[日本語ユーザーガイド](../user-guide/)を参照してください。
+## 7. KeyにVoice操作を設定する
+
+接続中のChain Keyの設定で、まず「押した時」に次の値を手入力します。
+
+- OSCアドレス：`/input/Voice`
+- 型：`Int`
+- 値：`1`
+
+「離した時」に切り替えて、次の値を手入力します。
+
+- OSCアドレス：`/input/Voice`
+- 型：`Int`
+- 値：`0`
+
+## 8. 保存して動作を確認する
+
+1. 「すべての設定を保存」を押します。
+2. VRChatが起動していてOSCが有効な状態で、設定したChain Keyを操作します。
+3. VRChatのVoice入力状態が切り替わることを確認します。Voiceが切り替われば、ChainOSCnanoからOSCメッセージを送信できています。
+
+VRChat以外のOSC対応アプリケーションでも、送信先、OSC Address、型、値をそのアプリケーションに合わせて設定すれば利用できます。よく使う設定の再利用・共有にはDevice Presetを利用できます。詳しくは[日本語ユーザーガイド](../user-guide/)を参照してください。
