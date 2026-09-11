@@ -31,6 +31,16 @@ Encoderの絶対値モードに、最小値／最大値で停止するか範囲�
 
 ブラウザーで`http://chainoscnano.local/`または本体のIPアドレスを開き、各Chain Keyを設定して「すべての設定を保存」を押します。
 
+## Device Preset対応
+
+デバイス単位のプリセットにはChainOSCシリーズ共通の`ChainOSC-device-preset`形式を使用します。ChainOSCnanoのDevice PresetはすべてschemaVersion 1です。
+
+- Key v1：M5ChainOSC、ChainOSCmini、ChainOSCnano、ChainOSCPad、ChainOSC for Windowsと共有できます。
+- Encoder v1：M5ChainOSC、ChainOSCmini、ChainOSCnano、ChainOSCPadと共有できます。Encoder v2のImport／Exportには対応していません。
+- Angle v1、ToF v1、Joystick v1：M5ChainOSC、ChainOSCmini、ChainOSCnano間で共有できます。
+
+共有可否はDevice TypeとschemaVersion、各製品のImporter／Exporter対応に基づきます。詳細な共通仕様は[ChainOSC共通リポジトリ](https://github.com/shimez/ChainOSC)を参照してください。
+
 ## 初回Wi-Fi設定
 
 1. M5NanoC6を起動します。
@@ -113,16 +123,6 @@ ESP32-C6のArduinoフレームワークを利用するため、`platformio.ini`�
 ## テスト
 
 確認手順と実機結果は[`docs/TESTING.md`](docs/TESTING.md)を参照してください。
-
-## プリセット互換
-
-デバイス単位のプリセットにはChainOSCシリーズ共通の`ChainOSC-device-preset`形式を使用します。ChainOSCnanoのDevice PresetはすべてschemaVersion 1です。
-
-- Key v1：M5ChainOSC、ChainOSCmini、ChainOSCnano、ChainOSCPad、ChainOSC for Windowsと共有できます。
-- Encoder v1：M5ChainOSC、ChainOSCmini、ChainOSCnano、ChainOSCPadと共有できます。Encoder v2のImport／Exportには対応していません。
-- Angle v1、ToF v1、Joystick v1：M5ChainOSC、ChainOSCmini、ChainOSCnano間で共有できます。
-
-共有可否はDevice TypeとschemaVersion、各製品のImporter／Exporter対応に基づきます。詳細な共通仕様は[ChainOSC共通リポジトリ](https://github.com/shimez/ChainOSC)を参照してください。
 
 ## ライセンス
 
