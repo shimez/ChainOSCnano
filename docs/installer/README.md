@@ -6,6 +6,7 @@ ChainOSCnanoのファームウェアをM5NanoC6へブラウザーから書き込
 
 - Version 1.2.3: Web UIの入力検証を強化し、通常画面とAP Modeへfaviconを追加
 - Version 1.2.1: AP Modeのキャプティブポータルから全設定を削除する機能を追加
+- Version 1.2.2: Encoder／Joystick／Angle／ToF／Push Sequenceの入力検証と警告表示を強化
 - Version 1.2.0: Web UIからLittleFSとNVSの全設定を削除して再起動する機能を追加
 
 ## 公開URL
