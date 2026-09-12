@@ -1058,7 +1058,8 @@ String pressReleaseHtml(const String& group, const KeySetting& setting,
   return html;
 }
 
-void appendKeyCard(String& html, const KeySetting& setting, size_t cardIndex) {
+void appendKeyCard(String& html, const KeySetting& setting, size_t cardIndex,
+                   const String& position = String()) {
   const String collapseKey = String(cardIndex) + "-" + setting.identity;
   const String deviceLabel = setting.builtIn ? "M5NanoC6" : "Key";
   html += F("<div class='card device' data-device-index='");
@@ -1072,10 +1073,9 @@ void appendKeyCard(String& html, const KeySetting& setting, size_t cardIndex) {
   html += F("','");
   html += htmlEscape(collapseKey);
   html += F("')\">&#9660;</button><span class='badge badge-type'>");
-  html += deviceLabel;
+  html += position.isEmpty() ? deviceLabel : position;
   html += F("</span> ");
   html += htmlEscape(setting.displayName);
-  html += String(" <span class='badge badge-on'>") + tr("Connected", "接続済み") + "</span>";
   html += F("</h2>");
   html += F("<div class='device-menu-wrap'><button class='device-menu-button' type='button' aria-label='Device menu' onclick='toggleDeviceMenu(");
   html += cardIndex;
@@ -1161,8 +1161,13 @@ void appendKeyCard(String& html, const KeySetting& setting, size_t cardIndex) {
   html += F("</div></div></div></div></div>");
 }
 
+String chainPositionBadge(const String& position, const char* type) {
+  return String("<span class='badge badge-type'>") +
+         (position.isEmpty() ? String(type) : position) + "</span>";
+}
+
 void appendEncoderCard(String& html, const EncoderSetting& setting,
-                       size_t cardIndex) {
+                       size_t cardIndex, const String& position = String()) {
   const String idx = String(cardIndex);
   const String collapseKey = idx + "-" + setting.identity;
   KeySetting click;
@@ -1178,7 +1183,7 @@ void appendEncoderCard(String& html, const EncoderSetting& setting,
   html += "<div class='card device' data-device-index='" + idx +
           "' data-collapse-key='" + htmlEscape(collapseKey) + "'>";
   html += "<div class='device-head'><h2><button id='collapse-" + idx +
-          "' class='collapse-button' type='button' aria-expanded='true' onclick=\"toggleDevice('" + idx + "','" + htmlEscape(collapseKey) + "')\">&#9660;</button><span class='badge badge-type'>Encoder</span> " + htmlEscape(setting.displayName) + " <span class='badge badge-on'>" + tr("Connected", "接続済み") + "</span></h2>";
+          "' class='collapse-button' type='button' aria-expanded='true' onclick=\"toggleDevice('" + idx + "','" + htmlEscape(collapseKey) + "')\">&#9660;</button>" + chainPositionBadge(position, "Encoder") + " " + htmlEscape(setting.displayName) + "</h2>";
   html += "<div class='device-menu-wrap'><button class='device-menu-button' type='button' aria-label='Device menu' onclick='toggleDeviceMenu(" + idx + ")'>&hellip;</button><div id='device-menu-" + idx + "' class='device-menu' hidden><button type='button' onclick='identifyDevice(" + idx + ")'>" + tr("Identify Device (Orange LED for 10s)", "デバイスを識別（LEDを10秒間オレンジ点灯）") + "</button><a href='/export_device_preset?index=" + idx + "'>" + tr("Export Preset (JSON)", "プリセットをエクスポート（JSON）") + "</a><button type='button' onclick='chooseDevicePreset(" + idx + ")'>" + tr("Import Preset (JSON)", "プリセットをインポート（JSON）") + "</button></div><input id='preset-file-" + idx + "' type='file' accept='application/json,.json' hidden onchange='importDevicePreset(" + idx + ",this)'></div></div>";
   html += "<div id='device-body-" + idx + "' class='device-body'><div class='uid'>" + htmlEscape(setting.identity) + "</div><p id='preset-status-" + idx + "' class='import-status'></p>";
   html += "<input type='hidden' name='identity_" + idx + "' value='" + htmlEscape(setting.identity) + "'><input type='hidden' name='device_type_" + idx + "' value='1'>";
@@ -1260,13 +1265,13 @@ void appendSavedEncoderCard(String& html, const EncoderSetting& setting) {
 }
 
 void appendAngleCard(String& html, const AngleSetting& setting,
-                     size_t cardIndex) {
+                     size_t cardIndex, const String& position = String()) {
   const String idx = String(cardIndex);
   const String collapseKey = idx + "-" + setting.identity;
   html += "<div class='card device' data-device-index='" + idx +
           "' data-collapse-key='" + htmlEscape(collapseKey) + "'>";
   html += "<div class='device-head'><h2><button id='collapse-" + idx +
-          "' class='collapse-button' type='button' aria-expanded='true' onclick=\"toggleDevice('" + idx + "','" + htmlEscape(collapseKey) + "')\">&#9660;</button><span class='badge badge-type'>Angle</span> " + htmlEscape(setting.displayName) + " <span class='badge badge-on'>" + tr("Connected", "接続済み") + "</span></h2>";
+          "' class='collapse-button' type='button' aria-expanded='true' onclick=\"toggleDevice('" + idx + "','" + htmlEscape(collapseKey) + "')\">&#9660;</button>" + chainPositionBadge(position, "Angle") + " " + htmlEscape(setting.displayName) + "</h2>";
   html += "<div class='device-menu-wrap'><button class='device-menu-button' type='button' aria-label='Device menu' onclick='toggleDeviceMenu(" + idx + ")'>&hellip;</button><div id='device-menu-" + idx + "' class='device-menu' hidden><button type='button' onclick='identifyDevice(" + idx + ")'>" + tr("Identify Device (Orange LED for 10s)", "デバイスを識別（LEDを10秒間オレンジ点灯）") + "</button><a href='/export_device_preset?index=" + idx + "'>" + tr("Export Preset (JSON)", "プリセットをエクスポート（JSON）") + "</a><button type='button' onclick='chooseDevicePreset(" + idx + ")'>" + tr("Import Preset (JSON)", "プリセットをインポート（JSON）") + "</button></div><input id='preset-file-" + idx + "' type='file' accept='application/json,.json' hidden onchange='importDevicePreset(" + idx + ",this)'></div></div>";
   html += "<div id='device-body-" + idx + "' class='device-body'><div class='uid'>" + htmlEscape(setting.identity) + "</div><p id='preset-status-" + idx + "' class='import-status'></p>";
   html += "<input type='hidden' name='identity_" + idx + "' value='" + htmlEscape(setting.identity) + "'><input type='hidden' name='device_type_" + idx + "' value='2'>";
@@ -1289,9 +1294,10 @@ void appendSavedAngleCard(String& html, const AngleSetting& setting) {
   html += F("</div>");
 }
 
-void appendTofCard(String& html, const TofSetting& setting, size_t cardIndex) {
+void appendTofCard(String& html, const TofSetting& setting, size_t cardIndex,
+                   const String& position = String()) {
   const String idx = String(cardIndex), collapseKey = idx + "-" + setting.identity;
-  html += "<div class='card device' data-device-index='" + idx + "' data-collapse-key='" + htmlEscape(collapseKey) + "'><div class='device-head'><h2><button id='collapse-" + idx + "' class='collapse-button' type='button' aria-expanded='true' onclick=\"toggleDevice('" + idx + "','" + htmlEscape(collapseKey) + "')\">&#9660;</button><span class='badge badge-type'>ToF</span> " + htmlEscape(setting.displayName) + " <span class='badge badge-on'>" + tr("Connected", "接続済み") + "</span></h2>";
+  html += "<div class='card device' data-device-index='" + idx + "' data-collapse-key='" + htmlEscape(collapseKey) + "'><div class='device-head'><h2><button id='collapse-" + idx + "' class='collapse-button' type='button' aria-expanded='true' onclick=\"toggleDevice('" + idx + "','" + htmlEscape(collapseKey) + "')\">&#9660;</button>" + chainPositionBadge(position, "ToF") + " " + htmlEscape(setting.displayName) + "</h2>";
   html += "<div class='device-menu-wrap'><button class='device-menu-button' type='button' aria-label='Device menu' onclick='toggleDeviceMenu(" + idx + ")'>&hellip;</button><div id='device-menu-" + idx + "' class='device-menu' hidden><button type='button' onclick='identifyDevice(" + idx + ")'>" + tr("Identify Device (Orange LED for 10s)", "デバイスを識別（LEDを10秒間オレンジ点灯）") + "</button><a href='/export_device_preset?index=" + idx + "'>" + tr("Export Preset (JSON)", "プリセットをエクスポート（JSON）") + "</a><button type='button' onclick='chooseDevicePreset(" + idx + ")'>" + tr("Import Preset (JSON)", "プリセットをインポート（JSON）") + "</button></div><input id='preset-file-" + idx + "' type='file' accept='application/json,.json' hidden onchange='importDevicePreset(" + idx + ",this)'></div></div>";
   html += "<div id='device-body-" + idx + "' class='device-body'><div class='uid'>" + htmlEscape(setting.identity) + "</div><p id='preset-status-" + idx + "' class='import-status'></p><input type='hidden' name='identity_" + idx + "' value='" + htmlEscape(setting.identity) + "'><input type='hidden' name='device_type_" + idx + "' value='5'>";
   html += "<div class='key-grid'><div><label>" + String(tr("Device Name", "デバイス名")) + "</label><input name='display_name_" + idx + "' maxlength='64' required value='" + htmlEscape(setting.displayName) + "'></div></div>";
@@ -1312,9 +1318,10 @@ void appendSavedTofCard(String& html, const TofSetting& setting) {
   html += F("</div>");
 }
 
-void appendJoystickCard(String& html, const JoystickSetting& setting, size_t cardIndex) {
+void appendJoystickCard(String& html, const JoystickSetting& setting, size_t cardIndex,
+                        const String& position = String()) {
   const String idx=String(cardIndex),collapseKey=idx+"-"+setting.identity;KeySetting click;click.mode=setting.clickMode;click.pressMessageCount=setting.pressMessageCount;click.releaseMessageCount=setting.releaseMessageCount;click.sequence=setting.clickSequence;for(uint8_t i=0;i<setting.pressMessageCount;++i)click.pressMessages[i]=setting.pressMessages[i];for(uint8_t i=0;i<setting.releaseMessageCount;++i)click.releaseMessages[i]=setting.releaseMessages[i];
-  html+="<div class='card device' data-device-index='"+idx+"' data-collapse-key='"+htmlEscape(collapseKey)+"'><div class='device-head'><h2><button id='collapse-"+idx+"' class='collapse-button' type='button' aria-expanded='true' onclick=\"toggleDevice('"+idx+"','"+htmlEscape(collapseKey)+"')\">&#9660;</button><span class='badge badge-type'>Joystick</span> "+htmlEscape(setting.displayName)+" <span class='badge badge-on'>"+tr("Connected","接続済み")+"</span></h2>";
+  html+="<div class='card device' data-device-index='"+idx+"' data-collapse-key='"+htmlEscape(collapseKey)+"'><div class='device-head'><h2><button id='collapse-"+idx+"' class='collapse-button' type='button' aria-expanded='true' onclick=\"toggleDevice('"+idx+"','"+htmlEscape(collapseKey)+"')\">&#9660;</button>" + chainPositionBadge(position, "Joystick") + " "+htmlEscape(setting.displayName)+"</h2>";
   html+="<div class='device-menu-wrap'><button class='device-menu-button' type='button' onclick='toggleDeviceMenu("+idx+")'>&hellip;</button><div id='device-menu-"+idx+"' class='device-menu' hidden><button type='button' onclick='identifyDevice("+idx+")'>"+tr("Identify Device (Orange LED for 10s)","デバイスを識別（LEDを10秒間オレンジ点灯）")+"</button><a href='/export_device_preset?index="+idx+"'>"+tr("Export Preset (JSON)","プリセットをエクスポート（JSON）")+"</a><button type='button' onclick='chooseDevicePreset("+idx+")'>"+tr("Import Preset (JSON)","プリセットをインポート（JSON）")+"</button></div><input id='preset-file-"+idx+"' type='file' accept='application/json,.json' hidden onchange='importDevicePreset("+idx+",this)'></div></div>";
   html+="<div id='device-body-"+idx+"' class='device-body'><div class='uid'>"+htmlEscape(setting.identity)+"</div><p id='preset-status-"+idx+"' class='import-status'></p><input type='hidden' name='identity_"+idx+"' value='"+htmlEscape(setting.identity)+"'><input type='hidden' name='device_type_"+idx+"' value='4'><div class='key-grid'><div><label>"+tr("Device Name","デバイス名")+"</label><input name='display_name_"+idx+"' maxlength='64' required value='"+htmlEscape(setting.displayName)+"'></div></div>";
   html+="<div class='joystick-section'><h3>"+String(tr("Joystick XY","ジョイスティック XY"))+"</h3><div class='joystick-grid'>";
@@ -1451,7 +1458,8 @@ void sendStatusPage(const String& message = String()) {
         if (setting != nullptr && !setting->builtIn &&
             setting->connectedPortMask != 0 &&
             setting->identity == identity) {
-          appendKeyCard(html, *setting, cardIndex++);
+          appendKeyCard(html, *setting, cardIndex++,
+                        String("#") + (physicalIndex + 1) + " Key");
           appended = true;
           break;
         }
@@ -1461,7 +1469,7 @@ void sendStatusPage(const String& message = String()) {
         EncoderSetting* setting = encoderSettingsAt(index);
         if (setting != nullptr && setting->connectedPortMask != 0 &&
             setting->identity == identity) {
-          appendEncoderCard(html, *setting, cardIndex++);
+          appendEncoderCard(html, *setting, cardIndex++, String("#") + (physicalIndex + 1) + " Encoder");
           appended = true;
           break;
         }
@@ -1471,7 +1479,7 @@ void sendStatusPage(const String& message = String()) {
         AngleSetting* setting = angleSettingsAt(index);
         if (setting != nullptr && setting->connectedPortMask != 0 &&
             setting->identity == identity) {
-          appendAngleCard(html, *setting, cardIndex++);
+          appendAngleCard(html, *setting, cardIndex++, String("#") + (physicalIndex + 1) + " Angle");
           appended = true;
           break;
         }
@@ -1481,7 +1489,7 @@ void sendStatusPage(const String& message = String()) {
         TofSetting* setting = tofSettingsAt(index);
         if (setting != nullptr && setting->connectedPortMask != 0 &&
             setting->identity == identity) {
-          appendTofCard(html, *setting, cardIndex++);
+          appendTofCard(html, *setting, cardIndex++, String("#") + (physicalIndex + 1) + " ToF");
           appended = true;
           break;
         }
@@ -1491,7 +1499,7 @@ void sendStatusPage(const String& message = String()) {
         JoystickSetting* setting = joystickSettingsAt(index);
         if (setting != nullptr && setting->connectedPortMask != 0 &&
             setting->identity == identity) {
-          appendJoystickCard(html, *setting, cardIndex++);
+          appendJoystickCard(html, *setting, cardIndex++, String("#") + (physicalIndex + 1) + " Joystick");
           appended = true;
           break;
         }
