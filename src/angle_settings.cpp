@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <math.h>
 
+#include "chain_probe.h"
 #include "logging.h"
 #include "compact_storage.h"
 #include "device_file_storage.h"
@@ -142,9 +143,11 @@ bool angleSettingsSave(const AngleSetting& candidate) {
   for (size_t i = 0; i < settingCount; ++i)
     if (settings[i].identity == candidate.identity) destination = &settings[i];
   if (!destination || !writeSetting(candidate)) return false;
+  const bool resolutionChanged = destination->use12Bit != candidate.use12Bit;
   const uint8_t portMask = destination->connectedPortMask;
   *destination = candidate;
   destination->connectedPortMask = portMask;
+  if (resolutionChanged) chainProbeResetAngleRuntimeState(candidate.identity);
   NANO_VERBOSE_LOGF("[ChainOSCnano][ANGLECFG] saved identity=%s resolution=%u deadband=%d\n",
                 candidate.identity.c_str(), candidate.use12Bit ? 12 : 8,
                 candidate.deadband);

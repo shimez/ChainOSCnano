@@ -743,6 +743,24 @@ bool chainProbeIdentifyDevice(const String& identity) {
   return identifyOnPort(portG1G2, identity);
 }
 
+void chainProbeResetAngleRuntimeState(const String& identity) {
+  for (uint16_t index = 0; index < portG1G2.deviceCount; ++index) {
+    DeviceSnapshot& device = portG1G2.devices[index];
+    if (device.type != CHAIN_ANGLE_TYPE_CODE || !device.uidValid) continue;
+    String deviceIdentity = F("chain:");
+    deviceIdentity.reserve(6 + UID_SIZE * 2);
+    for (size_t byteIndex = 0; byteIndex < UID_SIZE; ++byteIndex) {
+      char byteText[3];
+      snprintf(byteText, sizeof(byteText), "%02X", device.uid[byteIndex]);
+      deviceIdentity += byteText;
+    }
+    if (deviceIdentity == identity) {
+      device.angleInitialized = false;
+      return;
+    }
+  }
+}
+
 size_t chainProbeConnectedDeviceCount() {
   return static_cast<size_t>(portG1G2.deviceCount);
 }
