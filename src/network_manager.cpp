@@ -55,6 +55,7 @@ constexpr int SETTINGS_SCHEMA_VERSION = 1;
 constexpr char DEVICE_PRESET_FORMAT_NAME[] = "ChainOSC-device-preset";
 constexpr char LEGACY_DEVICE_PRESET_FORMAT_NAME[] = "M5ChainOSC-device-preset";
 constexpr int DEVICE_PRESET_SCHEMA_VERSION = 1;
+constexpr int DEVICE_PRESET_SCHEMA_VERSION_V2 = 2;
 constexpr int CHAIN_KEY_DEVICE_TYPE = 3;
 constexpr int CHAIN_ENCODER_DEVICE_TYPE = 1;
 constexpr int CHAIN_ANGLE_DEVICE_TYPE = 2;
@@ -127,7 +128,8 @@ button{width:100%;padding:12px;background:#28a745;color:#fff;border:none;border-
 .event-tabs{display:flex;gap:4px;padding:4px;background:#edf0f4;border-radius:9px}.event-tab{margin:0;background:transparent;color:#697586}.event-tab.active{background:#fff;color:#18212f;box-shadow:0 1px 4px #bbb}
 .event-panel{margin-top:12px}.osc-list{display:grid;gap:10px}.osc-row{display:grid;grid-template-columns:62px minmax(180px,1fr) 115px minmax(100px,.55fr) 68px;gap:9px;align-items:start;padding:12px;border:1px solid #dce2ea;border-radius:10px;background:#fbfcfe}.osc-row label{margin-top:0}.order{display:flex;gap:3px;align-self:center}.mv{width:auto;margin:0;padding:7px;background:#fff;color:#526075;border:1px solid #dce2ea}.remove-msg{width:auto;margin-top:22px;padding:9px;background:#fff3f4;color:#c73c4a;border:1px solid #efc6cb}.add-msg{background:#f7faff;color:#3267e3;border:1px dashed #9db6ef}.add-msg:disabled{background:#eee;color:#888}.empty{display:none;padding:18px;text-align:center;color:#697586;border:1px dashed #dce2ea;border-radius:9px}.osc-list:empty+.empty{display:block}
 .sequence-card{margin-top:12px;padding:15px;border:1px solid #dce2ea;border-radius:10px;background:#fbfcfe}.sequence-card h3{margin-top:0}.seq-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.seq-address{grid-column:1/-1}
-.encoder-rotation{margin-top:12px;padding:14px;border-left:5px solid #fd7e14;background:#f8f9fa}.encoder-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.encoder-address{grid-column:1/-1}.encoder-mode-hidden{visibility:hidden;pointer-events:none}.wrap-setting label{display:flex;align-items:center;gap:6px;margin:0}.wrap-setting input{width:auto;margin:0}.angle-section,.tof-section{margin-top:12px;padding:14px;border-left:5px solid #6610f2;background:#f8f9fa}.joystick-section{margin-top:12px;padding:14px;border-left:5px solid #e83e8c;background:#f8f9fa}.angle-grid,.tof-grid,.joystick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.angle-address,.tof-address,.joystick-address,.joystick-invert{grid-column:1/-1}.angle-section h3,.tof-section h3,.joystick-section h3{margin:0 0 8px}.joystick-invert{display:flex;gap:18px;flex-wrap:wrap}.joystick-invert label{display:flex;align-items:center;gap:6px;margin:0}.joystick-invert input{width:auto;margin:0}.click-section{margin-top:14px;padding:14px;border-left:5px solid #28a745;background:#f8f9fa}.click-section h3,.encoder-rotation h3{margin:0 0 8px}
+.encoder-rotation{margin-top:12px;padding:14px;border-left:5px solid #fd7e14;background:#f8f9fa}.encoder-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.encoder-legacy-grid .numeric-error:empty{display:none;min-height:0}.encoder-address{grid-column:1/-1}.encoder-mode-hidden{visibility:hidden;pointer-events:none}.wrap-setting label{display:flex;align-items:center;gap:6px;margin:0}.wrap-setting input{width:auto;margin:0}.angle-section,.tof-section{margin-top:12px;padding:14px;border-left:5px solid #6610f2;background:#f8f9fa}.joystick-section{margin-top:12px;padding:14px;border-left:5px solid #e83e8c;background:#f8f9fa}.angle-grid,.tof-grid,.joystick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.angle-address,.tof-address,.joystick-address,.joystick-invert{grid-column:1/-1}.angle-section h3,.tof-section h3,.joystick-section h3{margin:0 0 8px}.joystick-invert{display:flex;gap:18px;flex-wrap:wrap}.joystick-invert label{display:flex;align-items:center;gap:6px;margin:0}.joystick-invert input{width:auto;margin:0}.click-section{margin-top:14px;padding:14px;border-left:5px solid #28a745;background:#f8f9fa}.click-section h3,.encoder-rotation h3{margin:0 0 8px}
+.encoder-migration-panel{margin:14px 0 18px;padding:14px 16px;border:1px solid #f0c36a;border-radius:9px;background:#fff9e8}.encoder-migration-panel strong{display:block}.encoder-migration-panel p{margin:6px 0;color:#68758a}.encoder-migration-panel label{display:flex;align-items:center;gap:9px;font-weight:normal}.encoder-migration-panel input[type=checkbox]{width:auto;margin:0}.encoder-migration-action{display:inline-block;width:auto;margin:14px 0 0;padding:7px 12px;border:0;border-radius:7px;background:#3267e3;color:#fff;font-size:.85em;text-decoration:none}.encoder-migration-cancel{background:#64748b;padding:11px 16px;font-size:1em}.encoder-v2-mode{grid-column:1/-1}.encoder-v2-direction-value{display:none}.encoder-v2-direction .encoder-v2-amount-value{display:none}.encoder-v2-direction .encoder-v2-direction-value{display:block}
 .save-bar{position:sticky;z-index:15;bottom:8px;display:flex;align-items:center;gap:12px;padding:10px 12px;margin:16px 0 28px;background:rgba(255,255,255,.96);border:1px solid #dce2ea;border-radius:10px;box-shadow:0 5px 18px rgba(0,0,0,.14)}.save-bar button{flex:1;margin:0;background:#28a745}.dirty-status{color:#b45f06;font-weight:bold;white-space:nowrap}.saved-device-card h2{display:flex;align-items:center;gap:4px;flex-wrap:wrap}.btn-warning{background:#ff9800}.toast{position:fixed;z-index:30;left:50%;bottom:78px;transform:translateX(-50%);padding:11px 18px;border-radius:8px;background:#17324d;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.25)}.wifi-actions{margin-top:28px}.wifi-actions form{margin:0}.danger-zone{margin-top:28px;border-left-color:#dc3545}.danger-zone button{width:100%;margin:0;background:#dc3545}
 .language-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.language-row h2{margin:0}.language-row form{margin:0;min-width:150px}.language-row select{margin:0}
 .device-menu-wrap{position:relative}.device-menu-button{width:32px;height:30px;margin:0;padding:0;background:#f1f4f8;color:#42516a;border:1px solid #dce2ea;border-radius:7px;font-size:18px}.device-menu{position:absolute;z-index:20;right:0;top:36px;width:235px;padding:7px;border:1px solid #dce2ea;border-radius:9px;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.18)}.device-menu[hidden]{display:none}.device-menu a,.device-menu button{display:block;width:100%;margin:0;padding:10px;border:0;border-radius:6px;background:#fff;color:#253047;text-align:left;text-decoration:none;font-size:14px}.device-menu a:hover,.device-menu button:hover{background:#f1f4f8}.tool-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tool-row a,.tool-row button{display:block;margin:0;padding:12px;border-radius:6px;background:#3267e3;color:#fff;text-align:center;text-decoration:none;font-size:16px}.import-status{min-height:20px;margin:9px 0 0;color:#526075;font-size:.9em}
@@ -143,11 +145,13 @@ function fieldError(input,error){let small=input.parentNode.querySelector('.nume
 function validateDeviceNumber(input){const name=input.name||'',label=(input.parentNode.querySelector('label')||{}).textContent||tx('Value','値');if(/(enc_(abs_min|abs_max|scale|out_min|out_max)|angle_out_(min|max)|joy_out_(min|max)|tof_out_(min|max))_/.test(name))return fieldError(input,float32Error(input.value,label));let min,max;if(name.startsWith('joy_deadband_')){min=1;max=254}else if(name.startsWith('tof_deadband_')){min=1;max=2000}else if(name.startsWith('tof_max_')){min=31;max=2000}else if(name.startsWith('angle_deadband_')){min=1;const select=input.closest('.device').querySelector('[name^=angle_12bit_]');max=select&&select.value==='0'?255:4095}else return true;const text=input.value.trim(),number=Number(text),error=/^[+-]?\d+$/.test(text)&&Number.isSafeInteger(number)&&number>=min&&number<=max?'':tx(label+' must be an integer from '+min+' to '+max,label+'は'+min+'～'+max+'の整数で入力してください');return fieldError(input,error)}
 function updateAngleResolution(select){const input=select.closest('.device').querySelector('[name^=angle_deadband_]');if(input)validateDeviceNumber(input)}
 function sequenceFieldError(input,error){let small=input.parentNode.querySelector('.sequence-error');if(!small){small=document.createElement('small');small.className='sequence-error err';input.parentNode.appendChild(small)}small.textContent=error;input.classList.toggle('invalid',!!error);return !error}function validateSequence(box){let fields=box.querySelectorAll('input[type=number]'),valid=true;if(fields.length<3)return true;let start=Number(fields[0].value),end=Number(fields[1].value),step=Number(fields[2].value),startError=float32Error(fields[0].value,tx('Start','開始値')),endError=float32Error(fields[1].value,tx('End','終了値')),stepError=float32Error(fields[2].value,tx('Step','増減量'));if(!sequenceFieldError(fields[0],startError))valid=false;if(!sequenceFieldError(fields[1],endError))valid=false;if(!stepError&&step===0)stepError=tx('Step must not be zero','増減量には0を指定できません');if(!startError&&!endError&&!stepError&&((start<end&&step<0)||(start>end&&step>0)))stepError=tx('Step must advance from Start toward End','増減量が開始値から終了値へ進む方向になっていません');if(!sequenceFieldError(fields[2],stepError))valid=false;return valid}
-function limitAndValidate(input,max){limitBytes(input,max);validateInput(input)}function validateSettingsForm(form){let valid=true;form.querySelectorAll('.msg-address,.msg-value,.osc-address').forEach(input=>{if(!validateInput(input))valid=false});form.querySelectorAll('.device input[type=number]').forEach(input=>{if(!input.closest('.sequence-card')&&!validateDeviceNumber(input))valid=false});form.querySelectorAll('.sequence-card').forEach(box=>{if(!validateSequence(box))valid=false});if(!valid){const bad=form.querySelector('.invalid');if(bad)bad.focus();alert(tx('Please correct the settings highlighted in red.','赤く表示された設定項目を修正してください。'))}return valid}
+function validateEncoderV2(card){if(!card)return true;let valid=true,mode=card.querySelector('.encoder-v2-rotation-mode').value,type=card.querySelector('.encoder-v2-output-type').value;if(mode==='0'){const min=card.querySelector('.encoder-v2-output-min'),max=card.querySelector('.encoder-v2-output-max'),steps=card.querySelector('.encoder-v2-range-steps');let minError=float32Error(min.value,tx('Minimum','最小値')),maxError=float32Error(max.value,tx('Maximum','最大値')),stepsError='';if(!minError&&!maxError&&!(Number(min.value)<Number(max.value)))maxError=tx('Minimum must be less than Maximum','最小値は最大値より小さくしてください');if(!/^[+]?\d+$/.test(steps.value.trim())||Number(steps.value)<1||Number(steps.value)>65535)stepsError=tx('Range Steps must be an integer from 1 to 65535','範囲ステップ数は1～65535の整数で入力してください');if(type==='1'&&!minError&&!maxError){const inputs=[min,max],errors=[minError,maxError];inputs.forEach((input,index)=>{const number=Number(input.value),rounded=Math.round(Math.abs(number))*Math.sign(number);if(rounded<-2147483648||rounded>2147483647)errors[index]=tx('Mapped Int values must fit in OSC int32','変換後のInt値はOSC int32の範囲内にしてください')});minError=errors[0];maxError=errors[1]}if(!fieldError(min,minError))valid=false;if(!fieldError(max,maxError))valid=false;if(!fieldError(steps,stepsError))valid=false}else{for(const input of card.querySelectorAll('.encoder-v2-direction-value input')){let error='',value=input.value.trim();if(bytes(input.value)>128)error=tx('Keep the value within 128 bytes in UTF-8','値はUTF-8で128バイト以内にしてください');else if(type==='0')error=float32Error(value,tx('Value','値'));else if(type==='1'){if(!/^[+-]?\d+$/.test(value))error=tx('Enter a decimal OSC int32','OSC int32の10進整数を入力してください');else{const number=BigInt(value);if(number<-2147483648n||number>2147483647n)error=tx('Int must be between -2147483648 and 2147483647','Intは-2147483648～2147483647の範囲で入力してください')}}if(!fieldError(input,error))valid=false}}return valid}
+function limitAndValidate(input,max){limitBytes(input,max);validateInput(input)}function validateSettingsForm(form){let valid=true;form.querySelectorAll('.msg-address,.msg-value,.osc-address').forEach(input=>{if(!validateInput(input))valid=false});form.querySelectorAll('.device input[type=number]').forEach(input=>{if(!input.closest('.sequence-card')&&!input.closest('.encoder-v2')&&!validateDeviceNumber(input))valid=false});form.querySelectorAll('.sequence-card').forEach(box=>{if(!validateSequence(box))valid=false});form.querySelectorAll('.encoder-v2').forEach(card=>{if(!validateEncoderV2(card))valid=false});if(!valid){const bad=form.querySelector('.invalid');if(bad)bad.focus();alert(tx('Please correct the settings highlighted in red.','赤く表示された設定項目を修正してください。'))}return valid}
+function confirmEncoderV2Migrations(form){for(const migration of form.querySelectorAll('input[name^="enc_edit_model_"][value="migration_v2"]')){const index=migration.name.substring('enc_edit_model_'.length);if(!form.querySelector('[name="enc_migration_confirm_'+index+'"]:checked')){alert(tx('Confirm the semantic differences before saving the v2 candidate.','v2候補を保存する前に、動作上の違いを確認してください。'));return false}}return true}
 function markDirty(event){if(event&&event.target&&event.target.matches('input[type="file"]'))return;const status=document.getElementById('dirty-status');if(status)status.hidden=false}
 function showToast(message){const toast=document.getElementById('save-toast');toast.textContent=message;toast.hidden=false;clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>toast.hidden=true,3000)}
 async function deleteAllSettings(event){event.preventDefault();if(!confirm(tx('Delete all settings? This cannot be undone.','すべての設定を削除しますか？この操作は取り消せません。')))return;const button=event.currentTarget.querySelector('button');button.disabled=true;button.textContent=tx('Deleting...','削除中...');try{const response=await fetch('/delete-all-settings',{method:'POST'}),message=await response.text();if(!response.ok)throw new Error(message);showToast(message)}catch(error){button.disabled=false;button.textContent=tx('Delete All Settings','すべての設定を削除');alert(error.message||tx('Could not delete settings.','設定を削除できませんでした。'))}}
-async function saveSettings(event){const form=event.currentTarget;if(!validateSettingsForm(form))return;const button=form.querySelector('.save-bar button');button.disabled=true;try{const response=await fetch('/save-all?ajax=1',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(new FormData(form))});const message=await response.text();if(!response.ok)throw new Error(message);document.getElementById('dirty-status').hidden=true;showToast(message)}catch(error){alert(error.message||tx('Could not save settings.','設定を保存できませんでした。'))}finally{button.disabled=false}}
+async function saveSettings(event){const form=event.currentTarget;if(!validateSettingsForm(form)||!confirmEncoderV2Migrations(form))return;const migrations=[...form.querySelectorAll('input[name^="enc_edit_model_"][value="migration_v2"]')],button=form.querySelector('.save-bar button');button.disabled=true;try{const response=await fetch('/save-all?ajax=1',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(new FormData(form))});const message=await response.text();if(!response.ok)throw new Error(message);document.getElementById('dirty-status').hidden=true;if(migrations.length){const index=migrations[0].name.substring('enc_edit_model_'.length),identity=form.querySelector('[name="identity_'+index+'"]')?.value;if(identity)focusEncoderAfterMigration(identity);location.replace('/')}else showToast(message)}catch(error){alert(error.message||tx('Could not save settings.','設定を保存できませんでした。'))}finally{button.disabled=false}}
 async function deleteSavedDevice(event,form){event.preventDefault();if(!confirm(tx('Delete settings for this device?','このデバイスの設定を削除しますか？')))return;try{const response=await fetch('/delete_device?ajax=1',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(new FormData(form))});const message=await response.text();if(!response.ok)throw new Error(message);form.closest('.saved-device-card').remove();showToast(message)}catch(error){alert(error.message||tx('Could not delete device settings.','デバイス設定を削除できませんでした。'))}}
 function toggleDeviceMenu(index){document.querySelectorAll('.device-menu').forEach(menu=>{if(menu.id!=='device-menu-'+index)menu.hidden=true});const menu=document.getElementById('device-menu-'+index);menu.hidden=!menu.hidden}
 function chooseSettingsFile(){document.getElementById('settings-import-file').click()}
@@ -159,6 +163,10 @@ async function importDevicePreset(index,input){const status=document.getElementB
 function toggleDevice(index,key){const body=document.getElementById('device-body-'+index);const button=document.getElementById('collapse-'+index);const collapsed=!body.hidden;body.hidden=collapsed;button.classList.toggle('collapsed',collapsed);button.setAttribute('aria-expanded',collapsed?'false':'true');sessionStorage.setItem('chainoscnano-collapse-'+key,collapsed?'1':'0')}
 function toggleKeyMode(prId,sqId,select){document.getElementById(prId).style.display=select.value==='1'?'none':'block';document.getElementById(sqId).style.display=select.value==='1'?'block':'none'}
 function updateEncoderMode(select){const card=select.closest('.encoder-rotation'),show=select.value==='0';if(card)card.querySelectorAll('.encoder-absolute-setting').forEach(item=>item.classList.toggle('encoder-mode-hidden',!show))}
+function focusEncoderAfterMigration(identity){sessionStorage.setItem('chainoscnano-focus-encoder-migration',identity)}
+function startEncoderMigration(identity){focusEncoderAfterMigration(identity);location.href='/?encoder_migration_uid='+encodeURIComponent(identity)}
+function cancelEncoderMigration(identity){focusEncoderAfterMigration(identity);location.href='/'}
+function updateEncoderV2Mode(select){const grid=select.closest('.encoder-grid');if(grid)grid.classList.toggle('encoder-v2-direction',select.value==='1')}
 function showEvent(group,event,button){document.querySelectorAll('.event-panel[data-group="'+group+'"]').forEach(panel=>panel.style.display=panel.dataset.event===event?'block':'none');button.parentNode.querySelectorAll('.event-tab').forEach(tab=>tab.classList.remove('active'));button.classList.add('active')}
 function rows(group){return document.querySelectorAll('.osc-row[data-group="'+group+'"]')}
 function renumber(group){const all=rows(group);['press','release'].forEach(event=>{document.querySelectorAll('.osc-row[data-group="'+group+'"][data-event="'+event+'"]').forEach((row,index)=>{const prefix=event==='press'?'p':'r';row.querySelector('.msg-address').name=prefix+'_address_'+group+'_'+index;row.querySelector('.type').name=prefix+'_type_'+group+'_'+index;row.querySelector('.msg-value').name=prefix+'_value_'+group+'_'+index})});document.getElementById('count-'+group).textContent=all.length;document.getElementById('p-count-'+group).value=document.querySelectorAll('.osc-row[data-group="'+group+'"][data-event="press"]').length;document.getElementById('r-count-'+group).value=document.querySelectorAll('.osc-row[data-group="'+group+'"][data-event="release"]').length;document.querySelectorAll('.add-msg[data-group="'+group+'"]').forEach(button=>button.disabled=all.length>=MAX_MSG)}
@@ -166,7 +174,7 @@ document.addEventListener('input',event=>{const box=event.target.closest&&event.
 function moveMsg(button,direction){const row=button.closest('.osc-row'),sibling=direction<0?row.previousElementSibling:row.nextElementSibling;if(!sibling)return;direction<0?row.parentNode.insertBefore(row,sibling):row.parentNode.insertBefore(sibling,row);renumber(row.dataset.group);markDirty()}
 function removeMsg(button){const row=button.closest('.osc-row'),group=row.dataset.group;row.remove();renumber(group);markDirty()}
 function addMsg(button){const group=button.dataset.group,event=button.dataset.event;if(rows(group).length>=MAX_MSG)return;const list=document.getElementById('list-'+event+'-'+group),row=document.createElement('div');row.className='osc-row';row.dataset.group=group;row.dataset.event=event;row.innerHTML='<div class="order"><button type="button" class="mv" onclick="moveMsg(this,-1)">&uarr;</button><button type="button" class="mv" onclick="moveMsg(this,1)">&darr;</button></div><div class="field"><label>'+tx('OSC Address','OSCアドレス')+'</label><input class="msg-address" maxlength="192" required oninput="limitAndValidate(this,192)"><small><span class="err"></span><span class="bytes"></span></small></div><div class="field"><label>'+tx('Type','型')+'</label><select class="type" onchange="validateInput(this.closest(\'.osc-row\').querySelector(\'.msg-value\'))"><option value="0" selected>Float</option><option value="1">Int</option><option value="2">String</option></select><small></small></div><div class="field"><label>'+tx('Value','値')+'</label><input class="msg-value" maxlength="128" value="1.0" oninput="limitAndValidate(this,128)"><small><span class="err"></span><span class="bytes"></span></small></div><button type="button" class="remove-msg" onclick="removeMsg(this)">'+tx('Delete','削除')+'</button>';list.appendChild(row);renumber(group);markDirty();row.querySelector('.msg-address').focus()}
-document.addEventListener('click',event=>{if(!event.target.closest('.device-menu-wrap'))document.querySelectorAll('.device-menu').forEach(menu=>menu.hidden=true)});document.addEventListener('DOMContentLoaded',()=>{const groups=new Set;document.querySelectorAll('.add-msg[data-group]').forEach(button=>groups.add(button.dataset.group));groups.forEach(renumber);document.querySelectorAll('.msg-address,.msg-value,.osc-address').forEach(validateInput);const form=document.getElementById('settings-form');if(form){form.addEventListener('input',markDirty);form.addEventListener('change',markDirty)}document.querySelectorAll('.device[data-collapse-key]').forEach(card=>{const key=card.dataset.collapseKey,index=card.dataset.deviceIndex;if(sessionStorage.getItem('chainoscnano-collapse-'+key)==='1'){const body=document.getElementById('device-body-'+index),button=document.getElementById('collapse-'+index);body.hidden=true;button.classList.add('collapsed');button.setAttribute('aria-expanded','false')}})})
+document.addEventListener('click',event=>{if(!event.target.closest('.device-menu-wrap'))document.querySelectorAll('.device-menu').forEach(menu=>menu.hidden=true)});document.addEventListener('DOMContentLoaded',()=>{const groups=new Set;document.querySelectorAll('.add-msg[data-group]').forEach(button=>groups.add(button.dataset.group));groups.forEach(renumber);document.querySelectorAll('.msg-address,.msg-value,.osc-address').forEach(validateInput);const form=document.getElementById('settings-form');if(form){form.addEventListener('input',markDirty);form.addEventListener('change',markDirty)}document.querySelectorAll('.device[data-collapse-key]').forEach(card=>{const key=card.dataset.collapseKey,index=card.dataset.deviceIndex;if(sessionStorage.getItem('chainoscnano-collapse-'+key)==='1'){const body=document.getElementById('device-body-'+index),button=document.getElementById('collapse-'+index);body.hidden=true;button.classList.add('collapsed');button.setAttribute('aria-expanded','false')}});if(new URLSearchParams(location.search).has('encoder_migration_uid'))history.replaceState(null,'',location.pathname);const focusIdentity=sessionStorage.getItem('chainoscnano-focus-encoder-migration');if(focusIdentity!==null){sessionStorage.removeItem('chainoscnano-focus-encoder-migration');const card=[...document.querySelectorAll('.device[data-encoder-identity]')].find(item=>item.dataset.encoderIdentity===focusIdentity);if(card)requestAnimationFrame(()=>card.querySelector('.encoder-rotation')?.scrollIntoView({behavior:'smooth',block:'start'}))}})
 )JS";
 
 String pageStart(const char* title) {
@@ -254,6 +262,39 @@ String sequenceJson(const KeySequenceConfig& sequence) {
          ",\"step\":" + String(sequence.step, 6) + "}";
 }
 
+String sequenceV2Json(const KeySequenceConfig& sequence) {
+  return String("{\"address\":") + jsonString(sequence.address) +
+         ",\"type\":" + String(static_cast<int>(sequence.valueType)) +
+         ",\"start\":" + String(sequence.start, 9) +
+         ",\"end\":" + String(sequence.end, 9) +
+         ",\"step\":" + String(sequence.step, 9) + "}";
+}
+
+String encoderV2DirectionValueJson(const String& value, ValueType type) {
+  if (type == TYPE_STRING) return jsonString(value);
+  if (type == TYPE_INT) {
+    char* end = nullptr;
+    errno = 0;
+    const long parsed = strtol(value.c_str(), &end, 10);
+    if (errno == 0 && end != value.c_str() && *end == '\0' &&
+        parsed >= INT32_MIN && parsed <= INT32_MAX)
+      return String(static_cast<int32_t>(parsed));
+    return "0";
+  }
+  char* end = nullptr;
+  const float parsed = strtof(value.c_str(), &end);
+  if (end == value.c_str() || *end != '\0' || !isfinite(parsed)) return "0";
+  char text[24];
+  snprintf(text, sizeof(text), "%.9g", static_cast<double>(parsed));
+  return String(text);
+}
+
+String encoderV2FloatJson(float value) {
+  char text[24];
+  snprintf(text, sizeof(text), "%.9g", static_cast<double>(value));
+  return String(text);
+}
+
 String keySettingJson(const KeySetting& setting, bool includeIdentity) {
   String output = "{";
   if (includeIdentity) {
@@ -276,6 +317,8 @@ String keySettingJson(const KeySetting& setting, bool includeIdentity) {
 }
 
 String encoderSettingJson(const EncoderSetting& setting, bool includeIdentity) {
+  const bool encoderV2Preset =
+      !includeIdentity && setting.settingsModel == ENCODER_SETTINGS_V2;
   String output = "{";
   if (includeIdentity) {
     output += String("\"identity\":") + jsonString(setting.identity) +
@@ -285,9 +328,47 @@ String encoderSettingJson(const EncoderSetting& setting, bool includeIdentity) {
               ",\"builtIn\":false";
   } else {
     output += String("\"format\":") + jsonString(DEVICE_PRESET_FORMAT_NAME) +
-              ",\"schemaVersion\":" + String(DEVICE_PRESET_SCHEMA_VERSION) +
+              ",\"schemaVersion\":" +
+              String(encoderV2Preset ? DEVICE_PRESET_SCHEMA_VERSION_V2
+                                     : DEVICE_PRESET_SCHEMA_VERSION) +
               ",\"deviceType\":" + String(CHAIN_ENCODER_DEVICE_TYPE) +
               ",\"deviceTypeName\":\"Encoder\"";
+  }
+  if (encoderV2Preset) {
+    output += String(",\"encoder\":{\"rotationAddress\":") +
+              jsonString(setting.rotationAddress) +
+              ",\"rotationMode\":" +
+              jsonString(setting.rotationMode == ENCODER_ROTATION_AMOUNT
+                             ? "amount"
+                             : "direction");
+    if (setting.rotationMode == ENCODER_ROTATION_AMOUNT) {
+      output += ",\"rangeSteps\":" + String(setting.rangeSteps) +
+                ",\"wrap\":" +
+                String(setting.wrapAround ? "true" : "false") +
+                ",\"clockwiseIncreases\":" +
+                String(setting.clockwiseIncreases ? "true" : "false") +
+                ",\"outputMin\":" + encoderV2FloatJson(setting.outputMin) +
+                ",\"outputMax\":" + encoderV2FloatJson(setting.outputMax);
+    } else {
+      output += ",\"clockwiseValue\":" +
+                encoderV2DirectionValueJson(setting.clockwiseValue,
+                                            setting.outputType) +
+                ",\"counterClockwiseValue\":" +
+                encoderV2DirectionValueJson(setting.counterClockwiseValue,
+                                            setting.outputType);
+    }
+    output += ",\"outputType\":" +
+              String(static_cast<int>(setting.outputType)) +
+              ",\"pushMode\":" + String(static_cast<int>(setting.pushMode)) +
+              ",\"press\":" +
+              messageArrayJson(setting.pressMessages,
+                               setting.pressMessageCount) +
+              ",\"release\":" +
+              messageArrayJson(setting.releaseMessages,
+                               setting.releaseMessageCount) +
+              ",\"sequence\":" + sequenceV2Json(setting.clickSequence) +
+              "}}";
+    return output;
   }
   output += String(",\"encoder\":{\"rotationAddress\":") +
             jsonString(setting.rotationAddress) +
@@ -394,6 +475,21 @@ bool hasPresetFields(JsonObjectConst object, const char* const* fields,
                      size_t count, String& error) {
   for (size_t index = 0; index < count; ++index)
     if (!object.containsKey(fields[index])) return presetRequiredFieldMissing(error);
+  return true;
+}
+
+bool hasOnlyPresetFields(JsonObjectConst object, const char* const* fields,
+                         size_t count, String& error) {
+  for (JsonPairConst pair : object) {
+    bool allowed = false;
+    for (size_t index = 0; index < count; ++index) {
+      if (strcmp(pair.key().c_str(), fields[index]) == 0) {
+        allowed = true;
+        break;
+      }
+    }
+    if (!allowed) return presetDeviceSettingInvalid(error);
+  }
   return true;
 }
 
@@ -877,6 +973,157 @@ bool encoderSettingFromJson(JsonObjectConst object, EncoderSetting& candidate,
                       candidate.clickSequence, error);
 }
 
+bool encoderSettingFromPresetV2(JsonObjectConst object,
+                                EncoderSetting& candidate, String& error) {
+  static const char* const rootFields[] = {
+      "format", "schemaVersion", "deviceType", "deviceTypeName", "encoder"};
+  if (object.isNull() ||
+      !hasPresetFields(object, rootFields, 5, error) ||
+      !hasOnlyPresetFields(object, rootFields, 5, error) ||
+      !object["format"].is<const char*>() ||
+      String(object["format"].as<const char*>()) != DEVICE_PRESET_FORMAT_NAME ||
+      !object["schemaVersion"].is<int>() ||
+      object["schemaVersion"].as<int>() != DEVICE_PRESET_SCHEMA_VERSION_V2 ||
+      !object["deviceType"].is<int>() ||
+      object["deviceType"].as<int>() != CHAIN_ENCODER_DEVICE_TYPE ||
+      !object["deviceTypeName"].is<const char*>() ||
+      String(object["deviceTypeName"].as<const char*>()) != "Encoder" ||
+      !object["encoder"].is<JsonObjectConst>())
+    return presetFieldTypeInvalid(error);
+
+  JsonObjectConst encoder = object["encoder"].as<JsonObjectConst>();
+  static const char* const commonFields[] = {
+      "rotationAddress", "rotationMode", "outputType", "pushMode",
+      "press", "release", "sequence"};
+  if (!hasPresetFields(encoder, commonFields, 7, error) ||
+      !encoder["rotationAddress"].is<const char*>() ||
+      !encoder["rotationMode"].is<const char*>() ||
+      !encoder["outputType"].is<int>() || !encoder["pushMode"].is<int>() ||
+      !encoder["press"].is<JsonArrayConst>() ||
+      !encoder["release"].is<JsonArrayConst>() ||
+      !encoder["sequence"].is<JsonObjectConst>())
+    return presetFieldTypeInvalid(error);
+
+  candidate.settingsModel = ENCODER_SETTINGS_V2;
+  candidate.rotationAddress = encoder["rotationAddress"].as<const char*>();
+  candidate.rotationAddress.trim();
+  if (!validJsonAddress(candidate.rotationAddress, error)) return false;
+  const int outputType = encoder["outputType"].as<int>();
+  const int pushMode = encoder["pushMode"].as<int>();
+  if (outputType < TYPE_FLOAT || outputType > TYPE_STRING)
+    return oscTypeInvalid(error);
+  if (pushMode < MODE_PRESS_RELEASE || pushMode > MODE_SEQUENCE)
+    return presetDeviceSettingInvalid(error);
+  candidate.outputType = static_cast<ValueType>(outputType);
+  candidate.pushMode = static_cast<KeyMode>(pushMode);
+  candidate.clickMode = candidate.pushMode;
+
+  JsonArrayConst press = encoder["press"].as<JsonArrayConst>();
+  JsonArrayConst release = encoder["release"].as<JsonArrayConst>();
+  if (!validatePresetMessages(press, release, error) ||
+      !validatePresetSequence(encoder["sequence"].as<JsonObjectConst>(),
+                              false, error))
+    return false;
+  candidate.pressMessageCount = static_cast<uint8_t>(press.size());
+  candidate.releaseMessageCount = static_cast<uint8_t>(release.size());
+  uint8_t index = 0;
+  for (JsonObjectConst message : press)
+    if (!jsonMessage(message, candidate.pressMessages[index++], error))
+      return false;
+  index = 0;
+  for (JsonObjectConst message : release)
+    if (!jsonMessage(message, candidate.releaseMessages[index++], error))
+      return false;
+  if (!jsonSequence(encoder["sequence"].as<JsonObjectConst>(),
+                    candidate.clickSequence, error))
+    return false;
+
+  const String rotationMode = encoder["rotationMode"].as<const char*>();
+  if (rotationMode == "amount") {
+    static const char* const amountFields[] = {
+        "rotationAddress", "rotationMode", "rangeSteps", "wrap",
+        "clockwiseIncreases", "outputMin", "outputMax", "outputType",
+        "pushMode", "press", "release", "sequence"};
+    if (!hasPresetFields(encoder, amountFields, 12, error) ||
+        !hasOnlyPresetFields(encoder, amountFields, 12, error) ||
+        !encoder["rangeSteps"].is<int>() || !encoder["wrap"].is<bool>() ||
+        !encoder["clockwiseIncreases"].is<bool>() ||
+        !encoder["outputMin"].is<float>() ||
+        !encoder["outputMax"].is<float>())
+      return presetFieldTypeInvalid(error);
+    const int rangeSteps = encoder["rangeSteps"].as<int>();
+    if (rangeSteps < 1 || rangeSteps > 65535)
+      return presetDeviceSettingInvalid(error);
+    candidate.rotationMode = ENCODER_ROTATION_AMOUNT;
+    candidate.rangeSteps = static_cast<uint16_t>(rangeSteps);
+    candidate.wrapAround = encoder["wrap"].as<bool>();
+    candidate.clockwiseIncreases = encoder["clockwiseIncreases"].as<bool>();
+    const double outputMin = encoder["outputMin"].as<double>();
+    const double outputMax = encoder["outputMax"].as<double>();
+    candidate.outputMin = static_cast<float>(outputMin);
+    candidate.outputMax = static_cast<float>(outputMax);
+    if (!isfinite(outputMin) || !isfinite(outputMax) ||
+        !isfinite(candidate.outputMin) || !isfinite(candidate.outputMax) ||
+        (outputMin != 0.0 && candidate.outputMin == 0.0f) ||
+        (outputMax != 0.0 && candidate.outputMax == 0.0f) ||
+        !(candidate.outputMin < candidate.outputMax))
+      return presetDeviceSettingInvalid(error);
+  } else if (rotationMode == "direction") {
+    static const char* const directionFields[] = {
+        "rotationAddress", "rotationMode", "clockwiseValue",
+        "counterClockwiseValue", "outputType", "pushMode", "press",
+        "release", "sequence"};
+    if (!hasPresetFields(encoder, directionFields, 9, error) ||
+        !hasOnlyPresetFields(encoder, directionFields, 9, error))
+      return false;
+    candidate.rotationMode = ENCODER_ROTATION_DIRECTION;
+    if (candidate.outputType == TYPE_STRING) {
+      if (!encoder["clockwiseValue"].is<const char*>() ||
+          !encoder["counterClockwiseValue"].is<const char*>())
+        return presetFieldTypeInvalid(error);
+      candidate.clockwiseValue = encoder["clockwiseValue"].as<const char*>();
+      candidate.counterClockwiseValue =
+          encoder["counterClockwiseValue"].as<const char*>();
+      if (candidate.clockwiseValue.length() > 128 ||
+          candidate.counterClockwiseValue.length() > 128)
+        return presetDeviceSettingInvalid(error);
+    } else if (candidate.outputType == TYPE_INT) {
+      if (!encoder["clockwiseValue"].is<int32_t>() ||
+          !encoder["counterClockwiseValue"].is<int32_t>())
+        return presetFieldTypeInvalid(error);
+      candidate.clockwiseValue =
+          String(encoder["clockwiseValue"].as<int32_t>());
+      candidate.counterClockwiseValue =
+          String(encoder["counterClockwiseValue"].as<int32_t>());
+    } else {
+      if (!encoder["clockwiseValue"].is<float>() ||
+          !encoder["counterClockwiseValue"].is<float>())
+        return presetFieldTypeInvalid(error);
+      const double clockwiseSource = encoder["clockwiseValue"].as<double>();
+      const double counterClockwiseSource =
+          encoder["counterClockwiseValue"].as<double>();
+      const float clockwise = static_cast<float>(clockwiseSource);
+      const float counterClockwise = static_cast<float>(counterClockwiseSource);
+      if (!isfinite(clockwiseSource) || !isfinite(counterClockwiseSource) ||
+          !isfinite(clockwise) || !isfinite(counterClockwise) ||
+          (clockwiseSource != 0.0 && clockwise == 0.0f) ||
+          (counterClockwiseSource != 0.0 && counterClockwise == 0.0f))
+        return presetDeviceSettingInvalid(error);
+      char clockwiseText[24];
+      char counterClockwiseText[24];
+      snprintf(clockwiseText, sizeof(clockwiseText), "%.9g",
+               static_cast<double>(clockwise));
+      snprintf(counterClockwiseText, sizeof(counterClockwiseText), "%.9g",
+               static_cast<double>(counterClockwise));
+      candidate.clockwiseValue = clockwiseText;
+      candidate.counterClockwiseValue = counterClockwiseText;
+    }
+  } else {
+    return presetDeviceSettingInvalid(error);
+  }
+  return true;
+}
+
 bool angleSettingFromJson(JsonObjectConst object, AngleSetting& candidate,
                           bool includeIdentity, String& error) {
   if (object.isNull() || !object["deviceType"].is<int>() ||
@@ -1166,12 +1413,22 @@ String chainPositionBadge(const String& position, const char* type) {
          (position.isEmpty() ? String(type) : position) + "</span>";
 }
 
-void appendEncoderCard(String& html, const EncoderSetting& setting,
+void appendEncoderCard(String& html, const EncoderSetting& persistedSetting,
                        size_t cardIndex, const String& position = String()) {
   const String idx = String(cardIndex);
+  const bool migrationCandidate =
+      persistedSetting.settingsModel == ENCODER_SETTINGS_LEGACY &&
+      server.hasArg("encoder_migration_uid") &&
+      server.arg("encoder_migration_uid") == persistedSetting.identity;
+  EncoderSetting candidate;
+  const bool candidateReady =
+      migrationCandidate && encoderSettingsBuildV2MigrationCandidate(
+                                persistedSetting, candidate);
+  const EncoderSetting& setting = candidateReady ? candidate : persistedSetting;
+  const bool showV2 = setting.settingsModel == ENCODER_SETTINGS_V2;
   const String collapseKey = idx + "-" + setting.identity;
   KeySetting click;
-  click.mode = setting.clickMode;
+  click.mode = showV2 ? setting.pushMode : setting.clickMode;
   click.pressMessageCount = setting.pressMessageCount;
   click.releaseMessageCount = setting.releaseMessageCount;
   click.sequence = setting.clickSequence;
@@ -1181,15 +1438,48 @@ void appendEncoderCard(String& html, const EncoderSetting& setting,
     click.releaseMessages[i] = setting.releaseMessages[i];
 
   html += "<div class='card device' data-device-index='" + idx +
-          "' data-collapse-key='" + htmlEscape(collapseKey) + "'>";
+          "' data-collapse-key='" + htmlEscape(collapseKey) +
+          "' data-encoder-identity='" + htmlEscape(setting.identity) + "'>";
   html += "<div class='device-head'><h2><button id='collapse-" + idx +
           "' class='collapse-button' type='button' aria-expanded='true' onclick=\"toggleDevice('" + idx + "','" + htmlEscape(collapseKey) + "')\">&#9660;</button>" + chainPositionBadge(position, "Encoder") + " " + htmlEscape(setting.displayName) + "</h2>";
   html += "<div class='device-menu-wrap'><button class='device-menu-button' type='button' aria-label='Device menu' onclick='toggleDeviceMenu(" + idx + ")'>&hellip;</button><div id='device-menu-" + idx + "' class='device-menu' hidden><button type='button' onclick='identifyDevice(" + idx + ")'>" + tr("Identify Device (Orange LED for 10s)", "デバイスを識別（LEDを10秒間オレンジ点灯）") + "</button><a href='/export_device_preset?index=" + idx + "'>" + tr("Export Preset (JSON)", "プリセットをエクスポート（JSON）") + "</a><button type='button' onclick='chooseDevicePreset(" + idx + ")'>" + tr("Import Preset (JSON)", "プリセットをインポート（JSON）") + "</button></div><input id='preset-file-" + idx + "' type='file' accept='application/json,.json' hidden onchange='importDevicePreset(" + idx + ",this)'></div></div>";
   html += "<div id='device-body-" + idx + "' class='device-body'><div class='uid'>" + htmlEscape(setting.identity) + "</div><p id='preset-status-" + idx + "' class='import-status'></p>";
   html += "<input type='hidden' name='identity_" + idx + "' value='" + htmlEscape(setting.identity) + "'><input type='hidden' name='device_type_" + idx + "' value='1'>";
   html += "<div class='key-grid'><div><label>" + String(tr("Device Name", "デバイス名")) + "</label><input name='display_name_" + idx + "' maxlength='64' required value='" + htmlEscape(setting.displayName) + "'></div></div>";
-  html += "<div class='encoder-rotation'><h3>" + String(tr("Encoder Rotation", "エンコーダー回転")) + "</h3><div class='encoder-grid'>";
+  html += "<div class='encoder-rotation'><h3>" + String(tr("Encoder Rotation", "エンコーダー回転")) + "</h3>";
+  if (candidateReady) {
+    html += "<div class='encoder-migration-panel'><strong>" + String(tr("Notes about migrating to v2", "v2形式への移行に関する注意事項")) + "</strong><ul>";
+    if (persistedSetting.sendIncrement) {
+      html += "<li>" + String(tr("Legacy Increment is represented as v2 Direction. Confirm both values.", "旧形式の増分をv2の回転方向で表現しています。両方の値を確認してください。")) + "</li>";
+    } else {
+      if (persistedSetting.wrapAround)
+        html += "<li>" + String(tr("Legacy Wrap returns to the minimum without sending the maximum; v2 sends the maximum before returning to the minimum (runtime behavior changes)", "旧形式のループでは最大値を送信せず最小値に戻りますが、v2では最大値を送信してから最小値に戻ります（動作が変わります）")) + "</li>";
+      if (persistedSetting.absoluteInputMin != 0.0f)
+        html += "<li>" + String(tr("The Legacy absolute-input offset is not represented in v2 Amount", "旧形式の絶対値入力オフセットはv2回転量では表現されません")) + "</li>";
+      if (setting.rangeSteps == 0)
+        html += "<li>" + String(tr("Enter Range Steps from 1 to 65535 before saving.", "保存前に範囲ステップ数を1～65535で入力してください。")) + "</li>";
+    }
+    if (setting.rotationMode == ENCODER_ROTATION_AMOUNT && !(setting.outputMin < setting.outputMax))
+      html += "<li>" + String(tr("Set Output Min lower than Output Max before saving.", "保存前に最小値を最大値より小さく設定してください。")) + "</li>";
+    html += "</ul><label><input type='checkbox' name='enc_migration_confirm_" + idx + "' value='1'>" + String(tr("I understand the differences and want to save as v2.", "動作上の違いを理解し、v2として保存します。")) + "</label><button type='button' class='encoder-migration-action encoder-migration-cancel' onclick=\"cancelEncoderMigration('" + htmlEscape(setting.identity) + "')\">" + String(tr("Return to Legacy settings", "旧形式の設定へ戻る")) + "</button></div>";
+  } else if (setting.settingsModel == ENCODER_SETTINGS_LEGACY) {
+    html += "<div class='encoder-migration-panel'><strong>" + String(tr("Legacy Encoder settings", "旧形式のエンコーダー設定")) + "</strong><p>" + String(tr("Ordinary Save keeps the Legacy model.", "通常の保存では旧形式のまま維持されます。")) + "</p><button type='button' class='encoder-migration-action' onclick=\"startEncoderMigration('" + htmlEscape(setting.identity) + "')\">" + String(tr("Migrate to v2 settings", "v2設定へ移行する")) + "</button></div>";
+  }
+  html += "<input type='hidden' name='enc_edit_model_" + idx + "' value='" + String(candidateReady ? "migration_v2" : (showV2 ? "v2" : "legacy")) + "'>";
+  html += "<div class='encoder-grid" + String(showV2 ? (setting.rotationMode == ENCODER_ROTATION_DIRECTION ? " encoder-v2 encoder-v2-direction" : " encoder-v2") : " encoder-legacy-grid") + "'>";
   html += "<div class='encoder-address address-field'><label>" + String(tr("OSC Address", "OSCアドレス")) + "</label><input class='osc-address' maxlength='192' required name='enc_rotation_" + idx + "' value='" + htmlEscape(setting.rotationAddress) + "' oninput='limitAndValidate(this,192)'><small><span class='err'></span><span class='bytes'></span></small></div>";
+  if (showV2) {
+    html += "<div class='encoder-v2-mode'><label>" + String(tr("Mode", "モード")) + "</label><select class='encoder-v2-rotation-mode' name='enc_v2_mode_" + idx + "' onchange='updateEncoderV2Mode(this);validateEncoderV2(this.closest(\".encoder-v2\"))'><option value='0'" + String(setting.rotationMode == ENCODER_ROTATION_AMOUNT ? " selected" : "") + ">" + tr("Amount", "回転量") + "</option><option value='1'" + String(setting.rotationMode == ENCODER_ROTATION_DIRECTION ? " selected" : "") + ">" + tr("Direction", "回転方向") + "</option></select></div>";
+    html += "<div class='encoder-v2-amount-value'><label>" + String(tr("Minimum", "最小値")) + "</label><input class='encoder-v2-output-min' type='number' step='any' name='enc_v2_min_" + idx + "' value='" + String(setting.outputMin, 7) + "'></div>";
+    html += "<div class='encoder-v2-amount-value'><label>" + String(tr("Maximum", "最大値")) + "</label><input class='encoder-v2-output-max' type='number' step='any' name='enc_v2_max_" + idx + "' value='" + String(setting.outputMax, 7) + "'></div>";
+    html += "<div class='encoder-v2-amount-value'><label>" + String(tr("Beyond Minimum / Maximum", "最小値・最大値の先")) + "</label><select name='enc_v2_wrap_" + idx + "'><option value='1'" + String(setting.wrapAround ? " selected" : "") + ">" + tr("Wrap", "🔄ループする") + "</option><option value='0'" + String(!setting.wrapAround ? " selected" : "") + ">" + tr("Stop", "🛑停止する") + "</option></select></div>";
+    html += "<div class='encoder-v2-amount-value'><label>" + String(tr("Range Steps", "範囲ステップ数")) + "</label><input class='encoder-v2-range-steps' type='number' min='0' max='65535' name='enc_v2_steps_" + idx + "' value='" + String(setting.rangeSteps) + "'></div>";
+    html += "<div class='encoder-v2-direction-value'><label>" + String(tr("↪️ Counter-clockwise Value", "↪️反時計回りの値")) + "</label><input maxlength='128' name='enc_v2_ccw_value_" + idx + "' value='" + htmlEscape(setting.counterClockwiseValue) + "'></div>";
+    html += "<div class='encoder-v2-direction-value'><label>" + String(tr("↩️ Clockwise Value", "↩️時計回りの値")) + "</label><input maxlength='128' name='enc_v2_cw_value_" + idx + "' value='" + htmlEscape(setting.clockwiseValue) + "'></div>";
+    html += "<div><label>" + String(tr("Type", "型")) + "</label><select class='type encoder-v2-output-type' name='enc_v2_type_" + idx + "' onchange='validateEncoderV2(this.closest(\".encoder-v2\"))'><option value='0'" + String(setting.outputType == TYPE_FLOAT ? " selected" : "") + ">Float</option><option value='1'" + String(setting.outputType == TYPE_INT ? " selected" : "") + ">Int</option><option value='2'" + String(setting.outputType == TYPE_STRING ? " selected" : "") + ">String</option></select></div>";
+    html += "<div class='encoder-v2-amount-value'><label>" + String(tr("Rotation Direction", "回転方向")) + "</label><select name='enc_v2_clockwise_" + idx + "'><option value='0'" + String(!setting.clockwiseIncreases ? " selected" : "") + ">" + tr("Counter-clockwise increases", "↪️反時計回りで大きくなる") + "</option><option value='1'" + String(setting.clockwiseIncreases ? " selected" : "") + ">" + tr("Clockwise increases", "↩️時計回りで大きくなる") + "</option></select></div>";
+    html += "</div></div>";
+  } else {
   html += "<div><label>" + String(tr("Mode", "モード")) + "</label><select name='enc_increment_" + idx + "' onchange='updateEncoderMode(this)'><option value='0'" + String(!setting.sendIncrement ? " selected" : "") + ">" + tr("Absolute", "絶対値") + "</option><option value='1'" + String(setting.sendIncrement ? " selected" : "") + ">" + tr("Increment", "増分") + "</option></select></div>";
   const String absHiddenClass = setting.sendIncrement ? " encoder-mode-hidden" : "";
   html += "<div class='encoder-absolute-setting" + absHiddenClass + "'><label>" + String(tr("Abs In Min", "絶対値入力の最小値")) + "</label><input type='number' step='any' name='enc_abs_min_" + idx + "' value='" + String(setting.absoluteInputMin, 7) + "'></div>";
@@ -1199,10 +1489,12 @@ void appendEncoderCard(String& html, const EncoderSetting& setting,
   html += "<div><label>" + String(tr("Out Min", "出力最小値")) + "</label><input type='number' step='any' name='enc_out_min_" + idx + "' value='" + String(setting.outputMin, 7) + "'></div>";
   html += "<div><label>" + String(tr("Out Max", "出力最大値")) + "</label><input type='number' step='any' name='enc_out_max_" + idx + "' value='" + String(setting.outputMax, 7) + "'></div>";
   html += "<div><label>" + String(tr("Out Type", "出力の型")) + "</label>" + typeSelectHtml("enc_out_type_" + idx, setting.outputType) + "</div></div></div>";
-  html += "<div class='click-section'><h3>" + String(tr("Encoder Click", "エンコーダークリック")) + "</h3><div class='key-grid'><div><label>" + String(tr("Click Mode", "クリックモード")) + "</label><select name='mode_" + idx + "' onchange=\"toggleKeyMode('pr-" + idx + "','seq-" + idx + "',this)\"><option value='0'" + String(setting.clickMode == MODE_PRESS_RELEASE ? " selected" : "") + ">" + tr("Press / Release", "押した時／離した時") + "</option><option value='1'" + String(setting.clickMode == MODE_SEQUENCE ? " selected" : "") + ">" + tr("Sequence", "シーケンス") + "</option></select></div></div>";
+  }
+  const KeyMode pushMode = showV2 ? setting.pushMode : setting.clickMode;
+  html += "<div class='click-section'><h3>" + String(tr("Encoder Push", "エンコーダープッシュ")) + "</h3><div class='key-grid'><div><label>" + String(tr("Push Mode", "プッシュモード")) + "</label><select name='mode_" + idx + "' onchange=\"toggleKeyMode('pr-" + idx + "','seq-" + idx + "',this)\"><option value='0'" + String(pushMode == MODE_PRESS_RELEASE ? " selected" : "") + ">" + tr("Press / Release", "押した時／離した時") + "</option><option value='1'" + String(pushMode == MODE_SEQUENCE ? " selected" : "") + ">" + tr("Sequence", "シーケンス") + "</option></select></div></div>";
   html += pressReleaseHtml(idx, click,
-                           setting.clickMode == MODE_SEQUENCE);
-  html += "<div id='seq-" + idx + "' class='sequence-card' style='display:" + String(setting.clickMode == MODE_SEQUENCE ? "block" : "none") + "'><h3>" + String(tr("Click Sequence", "クリックシーケンス")) + "</h3><div class='seq-grid'>";
+                           pushMode == MODE_SEQUENCE);
+  html += "<div id='seq-" + idx + "' class='sequence-card' style='display:" + String(pushMode == MODE_SEQUENCE ? "block" : "none") + "'><h3>" + String(tr("Push Sequence", "プッシュシーケンス")) + "</h3><div class='seq-grid'>";
   html += "<div class='address-field seq-address'><label>" + String(tr("OSC Address", "OSCアドレス")) + "</label><input class='osc-address' maxlength='192' required name='seq_address_" + idx + "' value='" + htmlEscape(setting.clickSequence.address) + "' oninput='limitAndValidate(this,192)'><small><span class='err'></span><span class='bytes'></span></small></div>";
   html += "<div><label>" + String(tr("Start", "開始値")) + "</label><input type='number' step='any' required name='seq_start_" + idx + "' value='" + String(setting.clickSequence.start, 7) + "'></div><div><label>" + String(tr("End", "終了値")) + "</label><input type='number' step='any' required name='seq_end_" + idx + "' value='" + String(setting.clickSequence.end, 7) + "'></div>";
   html += "<div><label>" + String(tr("Step", "増減量")) + "</label><input type='number' step='any' required name='seq_step_" + idx + "' value='" + String(setting.clickSequence.step, 7) + "'></div><div><label>" + String(tr("Type", "型")) + "</label>" + typeSelectHtml("seq_type_" + idx, setting.clickSequence.valueType) + "</div></div></div></div></div></div>";
@@ -1669,13 +1961,28 @@ bool readEncoderSetting(size_t formIndex, EncoderSetting& candidate) {
     }
   }
   if (!current) return false;
-  candidate = *current;
+  const String editModel = server.arg("enc_edit_model" + suffix);
+  const bool migrationSave = editModel == "migration_v2";
+  if (editModel == "legacy") {
+    if (current->settingsModel != ENCODER_SETTINGS_LEGACY) return false;
+    candidate = *current;
+    candidate.settingsModel = ENCODER_SETTINGS_LEGACY;
+  } else if (editModel == "v2") {
+    if (current->settingsModel != ENCODER_SETTINGS_V2) return false;
+    candidate = *current;
+  } else if (migrationSave) {
+    if (current->settingsModel != ENCODER_SETTINGS_LEGACY ||
+        server.arg("enc_migration_confirm" + suffix) != "1" ||
+        !encoderSettingsBuildV2MigrationCandidate(*current, candidate))
+      return false;
+    candidate.settingsModel = ENCODER_SETTINGS_V2;
+  } else {
+    return false;
+  }
   candidate.displayName = server.arg("display_name" + suffix);
   candidate.displayName.trim();
   candidate.rotationAddress = server.arg("enc_rotation" + suffix);
   candidate.rotationAddress.trim();
-  candidate.sendIncrement = server.arg("enc_increment" + suffix).toInt() != 0;
-  candidate.wrapAround = server.hasArg("enc_wrap" + suffix);
 
   auto readFloat = [&](const String& name, float& value) {
     const String text = server.arg(name + suffix);
@@ -1690,15 +1997,60 @@ bool readEncoderSetting(size_t formIndex, EncoderSetting& candidate) {
   bool valid = !candidate.displayName.isEmpty() &&
                candidate.displayName.length() <= 64 &&
                validJsonAddress(candidate.rotationAddress, rotationError);
-  valid = valid && readFloat("enc_abs_min", candidate.absoluteInputMin) &&
-          readFloat("enc_abs_max", candidate.absoluteInputMax) &&
-          readFloat("enc_scale", candidate.incrementScale) &&
-          readFloat("enc_out_min", candidate.outputMin) &&
-          readFloat("enc_out_max", candidate.outputMax);
-  candidate.outputType = static_cast<ValueType>(constrain(
-      server.arg("enc_out_type" + suffix).toInt(), 0, 2));
-  candidate.clickMode = server.arg("mode" + suffix).toInt() == MODE_SEQUENCE
-                            ? MODE_SEQUENCE : MODE_PRESS_RELEASE;
+  if (candidate.settingsModel == ENCODER_SETTINGS_V2) {
+    const String modeText = server.arg("enc_v2_mode" + suffix);
+    const String typeText = server.arg("enc_v2_type" + suffix);
+    const String pushModeText = server.arg("mode" + suffix);
+    if ((modeText != "0" && modeText != "1") ||
+        (typeText != "0" && typeText != "1" && typeText != "2") ||
+        (pushModeText != "0" && pushModeText != "1"))
+      return false;
+    candidate.rotationMode = static_cast<EncoderRotationMode>(modeText.toInt());
+    candidate.outputType = static_cast<ValueType>(typeText.toInt());
+    candidate.pushMode = pushModeText == "1" ? MODE_SEQUENCE : MODE_PRESS_RELEASE;
+    candidate.clickMode = candidate.pushMode;
+    if (candidate.rotationMode == ENCODER_ROTATION_AMOUNT) {
+      const String wrapText = server.arg("enc_v2_wrap" + suffix);
+      const String clockwiseText = server.arg("enc_v2_clockwise" + suffix);
+      const String stepsText = server.arg("enc_v2_steps" + suffix);
+      char* stepsEnd = nullptr;
+      errno = 0;
+      const long steps = strtol(stepsText.c_str(), &stepsEnd, 10);
+      if ((wrapText != "0" && wrapText != "1") ||
+          (clockwiseText != "0" && clockwiseText != "1") ||
+          stepsText.isEmpty() || errno == ERANGE ||
+          stepsEnd == stepsText.c_str() || *stepsEnd != '\0' ||
+          steps < 0 || steps > 65535)
+        return false;
+      candidate.wrapAround = wrapText == "1";
+      candidate.clockwiseIncreases = clockwiseText == "1";
+      candidate.rangeSteps = static_cast<uint16_t>(steps);
+      valid = readFloat("enc_v2_min", candidate.outputMin) && valid;
+      valid = readFloat("enc_v2_max", candidate.outputMax) && valid;
+    } else {
+      candidate.counterClockwiseValue =
+          server.arg("enc_v2_ccw_value" + suffix);
+      candidate.clockwiseValue = server.arg("enc_v2_cw_value" + suffix);
+    }
+  } else {
+    const String legacyMode = server.arg("enc_increment" + suffix);
+    const String typeText = server.arg("enc_out_type" + suffix);
+    const String clickModeText = server.arg("mode" + suffix);
+    if ((legacyMode != "0" && legacyMode != "1") ||
+        (typeText != "0" && typeText != "1" && typeText != "2") ||
+        (clickModeText != "0" && clickModeText != "1"))
+      return false;
+    candidate.sendIncrement = legacyMode == "1";
+    candidate.wrapAround = server.hasArg("enc_wrap" + suffix);
+    valid = readFloat("enc_abs_min", candidate.absoluteInputMin) && valid;
+    valid = readFloat("enc_abs_max", candidate.absoluteInputMax) && valid;
+    valid = readFloat("enc_scale", candidate.incrementScale) && valid;
+    valid = readFloat("enc_out_min", candidate.outputMin) && valid;
+    valid = readFloat("enc_out_max", candidate.outputMax) && valid;
+    candidate.outputType = static_cast<ValueType>(typeText.toInt());
+    candidate.clickMode =
+        clickModeText == "1" ? MODE_SEQUENCE : MODE_PRESS_RELEASE;
+  }
   const int pressCount = server.arg("p_count" + suffix).toInt();
   const int releaseCount = server.arg("r_count" + suffix).toInt();
   if (pressCount < 0 || releaseCount < 0 ||
@@ -1845,6 +2197,19 @@ void handleSaveAll() {
     return;
   }
   const int count = constrain(server.arg("connected_count").toInt(), 0, 40);
+  for (int i = 0; i < count; ++i) {
+    const String suffix = "_" + String(i);
+    if (server.arg("device_type" + suffix).toInt() ==
+            CHAIN_ENCODER_DEVICE_TYPE &&
+        server.arg("enc_edit_model" + suffix) == "migration_v2" &&
+        server.arg("enc_migration_confirm" + suffix) != "1") {
+      sendActionResult(
+          400,
+          tr("Confirm the semantic differences before saving the v2 candidate.",
+             "v2候補を保存する前に、動作上の違いを確認してください。"));
+      return;
+    }
+  }
   for (int i = 0; i < count; ++i) {
     const int type = server.arg("device_type_" + String(i)).toInt();
     KeySetting keyCandidate;
@@ -2108,8 +2473,18 @@ void handleImportDevicePreset() {
                    "E_PRESET_FORMAT_INVALID: 対応するChainOSC Device Presetではありません。`format`が`ChainOSC-device-preset`であることを確認してください。"));
     return;
   }
-  if (!root["schemaVersion"].is<int>() ||
-      root["schemaVersion"].as<int>() != DEVICE_PRESET_SCHEMA_VERSION) {
+  const int presetTypeForSchema = root["deviceType"].is<int>()
+                                      ? root["deviceType"].as<int>()
+                                      : -1;
+  const int presetSchemaVersion = root["schemaVersion"].is<int>()
+                                      ? root["schemaVersion"].as<int>()
+                                      : -1;
+  const bool encoderV2Preset =
+      format == DEVICE_PRESET_FORMAT_NAME &&
+      presetTypeForSchema == CHAIN_ENCODER_DEVICE_TYPE &&
+      presetSchemaVersion == DEVICE_PRESET_SCHEMA_VERSION_V2;
+  if (presetSchemaVersion != DEVICE_PRESET_SCHEMA_VERSION &&
+      !encoderV2Preset) {
     server.send(400, "text/plain; charset=utf-8",
                 tr("E_PRESET_SCHEMA_UNSUPPORTED: The preset `schemaVersion` is missing or unsupported. Use a preset exported by a compatible product version.",
                    "E_PRESET_SCHEMA_UNSUPPORTED: プリセットの`schemaVersion`がないか、対応していません。対応するバージョンの製品からエクスポートしたプリセットを使用してください。"));
@@ -2141,7 +2516,8 @@ void handleImportDevicePreset() {
   }
   const bool legacyPreset = format == LEGACY_DEVICE_PRESET_FORMAT_NAME;
   String error;
-  if (!validateDevicePreset(root, presetType, legacyPreset, error)) {
+  if (!encoderV2Preset &&
+      !validateDevicePreset(root, presetType, legacyPreset, error)) {
     server.send(400, "text/plain; charset=utf-8",
                 String(tr("Invalid preset: ", "プリセットが正しくありません: ")) + error);
     return;
@@ -2149,11 +2525,20 @@ void handleImportDevicePreset() {
   if (legacyPreset) normalizeLegacyPresetTypes(document.as<JsonObject>(), presetType);
   bool saved = false;
   if (selected.encoder) {
-    EncoderSetting candidate = *selected.encoder;
-    if (!encoderSettingFromJson(root, candidate, false, error)) {
+    EncoderSetting candidate;
+    candidate.identity = selected.encoder->identity;
+    candidate.displayName = selected.encoder->displayName;
+    candidate.connectedPortMask = selected.encoder->connectedPortMask;
+    const bool parsed = encoderV2Preset
+                            ? encoderSettingFromPresetV2(root, candidate, error)
+                            : encoderSettingFromJson(root, candidate, false,
+                                                     error);
+    if (!parsed) {
       server.send(400, "text/plain; charset=utf-8", String(tr("Invalid preset: ", "プリセットが正しくありません: ")) + error);
       return;
     }
+    if (!encoderV2Preset)
+      candidate.settingsModel = ENCODER_SETTINGS_LEGACY;
     saved = encoderSettingsSave(candidate);
   } else if (selected.angle) {
     AngleSetting candidate = *selected.angle;

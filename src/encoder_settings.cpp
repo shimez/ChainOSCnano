@@ -2,6 +2,8 @@
 
 #include <Preferences.h>
 #include <ctype.h>
+#include <errno.h>
+#include <limits.h>
 #include <math.h>
 
 #include "logging.h"
@@ -55,22 +57,38 @@ bool sameMessage(const KeyOscMessage& left, const KeyOscMessage& right) {
 
 bool sameSetting(const EncoderSetting& left, const EncoderSetting& right) {
   if (left.identity != right.identity || left.displayName != right.displayName ||
+      left.settingsModel != right.settingsModel ||
       left.rotationAddress != right.rotationAddress ||
-      left.sendIncrement != right.sendIncrement ||
-      left.wrapAround != right.wrapAround ||
-      fabsf(left.absoluteInputMin - right.absoluteInputMin) > 0.00001f ||
-      fabsf(left.absoluteInputMax - right.absoluteInputMax) > 0.00001f ||
-      fabsf(left.incrementScale - right.incrementScale) > 0.00001f ||
-      fabsf(left.outputMin - right.outputMin) > 0.00001f ||
-      fabsf(left.outputMax - right.outputMax) > 0.00001f ||
-      left.outputType != right.outputType || left.clickMode != right.clickMode ||
+      left.outputMin != right.outputMin || left.outputMax != right.outputMax ||
+      left.outputType != right.outputType ||
       left.pressMessageCount != right.pressMessageCount ||
-      left.releaseMessageCount != right.releaseMessageCount ||
-      left.clickSequence.address != right.clickSequence.address ||
-      left.clickSequence.valueType != right.clickSequence.valueType ||
-      fabsf(left.clickSequence.start - right.clickSequence.start) > 0.00001f ||
-      fabsf(left.clickSequence.end - right.clickSequence.end) > 0.00001f ||
-      fabsf(left.clickSequence.step - right.clickSequence.step) > 0.00001f)
+      left.releaseMessageCount != right.releaseMessageCount)
+    return false;
+  if (left.settingsModel == ENCODER_SETTINGS_LEGACY &&
+      (left.sendIncrement != right.sendIncrement ||
+       left.wrapAround != right.wrapAround ||
+       fabsf(left.absoluteInputMin - right.absoluteInputMin) > 0.00001f ||
+       fabsf(left.absoluteInputMax - right.absoluteInputMax) > 0.00001f ||
+       fabsf(left.incrementScale - right.incrementScale) > 0.00001f ||
+       left.clickMode != right.clickMode ||
+       left.clickSequence.address != right.clickSequence.address ||
+       left.clickSequence.valueType != right.clickSequence.valueType ||
+       fabsf(left.clickSequence.start - right.clickSequence.start) > 0.00001f ||
+       fabsf(left.clickSequence.end - right.clickSequence.end) > 0.00001f ||
+       fabsf(left.clickSequence.step - right.clickSequence.step) > 0.00001f))
+    return false;
+  if (left.settingsModel == ENCODER_SETTINGS_V2 &&
+      (left.rotationMode != right.rotationMode ||
+       left.rangeSteps != right.rangeSteps || left.wrapAround != right.wrapAround ||
+       left.clockwiseIncreases != right.clockwiseIncreases ||
+       left.clockwiseValue != right.clockwiseValue ||
+       left.counterClockwiseValue != right.counterClockwiseValue ||
+       left.pushMode != right.pushMode ||
+       left.clickSequence.address != right.clickSequence.address ||
+       left.clickSequence.valueType != right.clickSequence.valueType ||
+       fabsf(left.clickSequence.start - right.clickSequence.start) > 0.00001f ||
+       fabsf(left.clickSequence.end - right.clickSequence.end) > 0.00001f ||
+       fabsf(left.clickSequence.step - right.clickSequence.step) > 0.00001f))
     return false;
   for (uint8_t i = 0; i < left.pressMessageCount; ++i)
     if (!sameMessage(left.pressMessages[i], right.pressMessages[i])) return false;
@@ -154,6 +172,7 @@ EncoderSetting* encoderSettingsEnsure(const String& identity,
   keySettingsNormalizeSequence(setting.clickSequence);
   bool found = false;
   loadSetting(identity, setting, found);
+  if (!found) setting.settingsModel = ENCODER_SETTINGS_V2;
   saveKnownDevices();
   return &setting;
 }
@@ -164,6 +183,9 @@ EncoderSetting* encoderSettingsAt(size_t index) {
   return index < settingCount ? &settings[index] : nullptr;
 }
 
+bool amountOutputIsValid(const EncoderSetting& candidate);
+bool directionOutputIsValid(const EncoderSetting& candidate);
+
 bool encoderSettingsSave(const EncoderSetting& candidate) {
   if (candidate.identity.isEmpty() || candidate.displayName.isEmpty() ||
       candidate.displayName.length() > 64 ||
@@ -173,7 +195,15 @@ bool encoderSettingsSave(const EncoderSetting& candidate) {
           MAX_KEY_OSC_MESSAGES || !isfinite(candidate.absoluteInputMin) ||
       !isfinite(candidate.absoluteInputMax) ||
       !isfinite(candidate.incrementScale) || !isfinite(candidate.outputMin) ||
-      !isfinite(candidate.outputMax))
+      !isfinite(candidate.outputMax) ||
+      (candidate.settingsModel == ENCODER_SETTINGS_V2 &&
+       (candidate.rotationMode < ENCODER_ROTATION_AMOUNT ||
+        candidate.rotationMode > ENCODER_ROTATION_DIRECTION ||
+        candidate.rangeSteps < 1 || candidate.pushMode < MODE_PRESS_RELEASE ||
+        candidate.pushMode > MODE_SEQUENCE ||
+        (candidate.rotationMode == ENCODER_ROTATION_AMOUNT
+             ? !amountOutputIsValid(candidate)
+             : !directionOutputIsValid(candidate)))))
     return false;
   for (uint8_t i = 0; i < candidate.pressMessageCount; ++i)
     if (!validAddress(candidate.pressMessages[i].address)) return false;
@@ -187,6 +217,7 @@ bool encoderSettingsSave(const EncoderSetting& candidate) {
   *destination = candidate;
   destination->connectedPortMask = portMask;
   destination->boundedAbsoluteInitialized = false;
+  destination->logicalPositionInitialized = false;
   keySettingsNormalizeSequence(destination->clickSequence);
   NANO_VERBOSE_LOGF("[ChainOSCnano][ENCCFG] saved identity=%s mode=%u press=%u release=%u\n",
                 candidate.identity.c_str(),
@@ -194,6 +225,115 @@ bool encoderSettingsSave(const EncoderSetting& candidate) {
                 static_cast<unsigned>(candidate.pressMessageCount),
                 static_cast<unsigned>(candidate.releaseMessageCount));
   return true;
+}
+
+bool validValueType(ValueType type) {
+  return type >= TYPE_FLOAT && type <= TYPE_STRING;
+}
+
+bool parseInt32Strict(const String& text, int32_t& value) {
+  if (text.isEmpty()) return false;
+  size_t index = (text[0] == '+' || text[0] == '-') ? 1 : 0;
+  if (index == text.length()) return false;
+  for (; index < text.length(); ++index)
+    if (!isdigit(static_cast<unsigned char>(text[index]))) return false;
+  errno = 0;
+  char* end = nullptr;
+  const long parsed = strtol(text.c_str(), &end, 10);
+  if (errno == ERANGE || end == text.c_str() || *end != '\0' ||
+      parsed < INT32_MIN || parsed > INT32_MAX)
+    return false;
+  value = static_cast<int32_t>(parsed);
+  return true;
+}
+
+bool parseFloat32Strict(const String& text, float& value) {
+  if (text.isEmpty()) return false;
+  errno = 0;
+  char* end = nullptr;
+  const float parsed = strtof(text.c_str(), &end);
+  if (errno == ERANGE || end == text.c_str() || *end != '\0' ||
+      !isfinite(parsed))
+    return false;
+  value = parsed;
+  return true;
+}
+
+bool amountOutputIsValid(const EncoderSetting& candidate) {
+  if (!validValueType(candidate.outputType) ||
+      !isfinite(candidate.outputMin) || !isfinite(candidate.outputMax) ||
+      !(candidate.outputMin < candidate.outputMax) ||
+      !isfinite(candidate.outputMax - candidate.outputMin))
+    return false;
+  if (candidate.outputType != TYPE_INT) return true;
+  const double roundedMin = round(static_cast<double>(candidate.outputMin));
+  const double roundedMax = round(static_cast<double>(candidate.outputMax));
+  return roundedMin >= static_cast<double>(INT32_MIN) &&
+         roundedMin <= static_cast<double>(INT32_MAX) &&
+         roundedMax >= static_cast<double>(INT32_MIN) &&
+         roundedMax <= static_cast<double>(INT32_MAX);
+}
+
+bool directionOutputIsValid(const EncoderSetting& candidate) {
+  if (!validValueType(candidate.outputType) ||
+      candidate.clockwiseValue.length() > 128 ||
+      candidate.counterClockwiseValue.length() > 128)
+    return false;
+  if (candidate.outputType == TYPE_STRING) return true;
+  if (candidate.outputType == TYPE_INT) {
+    int32_t clockwise = 0;
+    int32_t counterClockwise = 0;
+    return parseInt32Strict(candidate.clockwiseValue, clockwise) &&
+           parseInt32Strict(candidate.counterClockwiseValue, counterClockwise);
+  }
+  float clockwise = 0;
+  float counterClockwise = 0;
+  return parseFloat32Strict(candidate.clockwiseValue, clockwise) &&
+         parseFloat32Strict(candidate.counterClockwiseValue, counterClockwise);
+}
+
+namespace {
+String legacyDirectionValue(const EncoderSetting& legacy, int direction) {
+  const float low = min(legacy.outputMin, legacy.outputMax);
+  const float high = max(legacy.outputMin, legacy.outputMax);
+  const float value = constrain(direction * legacy.incrementScale, low, high);
+  if (legacy.outputType == TYPE_INT) return String((int32_t)lroundf(value));
+  return String(value, legacy.outputType == TYPE_STRING ? 3 : 7);
+}
+}
+
+bool encoderSettingsBuildV2MigrationCandidate(const EncoderSetting& legacy,
+                                               EncoderSetting& candidate) {
+  if (legacy.settingsModel != ENCODER_SETTINGS_LEGACY) return false;
+  candidate = legacy;
+  candidate.settingsModel = ENCODER_SETTINGS_V2;
+  candidate.pushMode = legacy.clickMode;
+  candidate.logicalPosition = 0;
+  candidate.logicalPositionInitialized = false;
+  if (legacy.sendIncrement) {
+    candidate.rotationMode = ENCODER_ROTATION_DIRECTION;
+    candidate.clockwiseValue = legacyDirectionValue(legacy, 1);
+    candidate.counterClockwiseValue = legacyDirectionValue(legacy, -1);
+    return true;
+  }
+  const float span = legacy.absoluteInputMax - legacy.absoluteInputMin;
+  candidate.rotationMode = ENCODER_ROTATION_AMOUNT;
+  candidate.rangeSteps = isfinite(span) && floorf(span) == span && span >= 1.0f &&
+                                 span <= 65535.0f
+                             ? static_cast<uint16_t>(span)
+                             : 0;
+  candidate.wrapAround = legacy.wrapAround;
+  candidate.clockwiseIncreases = true;
+  return true;
+}
+
+bool encoderSettingsCanLosslesslyMigrate(const EncoderSetting& legacy) {
+  if (legacy.settingsModel != ENCODER_SETTINGS_LEGACY || legacy.sendIncrement ||
+      legacy.wrapAround || legacy.absoluteInputMin != 0.0f ||
+      !(legacy.outputMin < legacy.outputMax))
+    return false;
+  const float span = legacy.absoluteInputMax - legacy.absoluteInputMin;
+  return isfinite(span) && floorf(span) == span && span >= 1.0f && span <= 65535.0f;
 }
 
 bool encoderSettingsDelete(const String& identity) {

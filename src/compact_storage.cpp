@@ -330,6 +330,7 @@ bool compactStorageSave(const String& ns, const EncoderSetting& s) {
 }
 bool compactStorageLoad(const String& ns, EncoderSetting& s) {
   String b;if(!readBlob(ns,b))return false;int o=0;EncoderSetting c=s;if(!header(b,o,"E",s.identity,c.displayName))return false;
+  c.settingsModel=ENCODER_SETTINGS_LEGACY;
   c.rotationAddress=take(b,o);c.sendIncrement=take(b,o).toInt()!=0;c.absoluteInputMin=take(b,o).toFloat();c.absoluteInputMax=take(b,o).toFloat();c.incrementScale=take(b,o).toFloat();c.outputMin=take(b,o).toFloat();c.outputMax=take(b,o).toFloat();c.outputType=takeValueType(b,o);
   c.clickMode=take(b,o).toInt()==MODE_SEQUENCE?MODE_SEQUENCE:MODE_PRESS_RELEASE;c.clickSequence.address=take(b,o);c.clickSequence.valueType=takeValueType(b,o);c.clickSequence.start=take(b,o).toFloat();c.clickSequence.end=take(b,o).toFloat();c.clickSequence.step=take(b,o).toFloat();
   if(!validAddress(c.rotationAddress)||!validAddress(c.clickSequence.address)||!takeMessages(b,o,c.pressMessages,c.pressMessageCount,c.releaseMessages,c.releaseMessageCount))return false;keySettingsNormalizeSequence(c.clickSequence);s=c;return true;

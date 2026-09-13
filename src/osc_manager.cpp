@@ -18,6 +18,11 @@ namespace {
 String targetHost = "192.168.1.100";
 uint16_t targetPort = 9000;
 
+String encoderAmountString(float value) {
+  const String text(value, 3);
+  return text == "-0.000" ? String("0.000") : text;
+}
+
 String uidText(const uint8_t* uid, size_t length) {
   String text;
   text.reserve(length * 2);
@@ -139,6 +144,55 @@ float clampValue(float value, float minimum, float maximum) {
 void sendEncoderRotationValue(EncoderSetting& setting, int16_t absoluteValue,
                               int16_t delta) {
   if (WiFi.status() != WL_CONNECTED) return;
+  if (setting.settingsModel == ENCODER_SETTINGS_V2) {
+    if (delta == 0) return;
+    String valueText;
+    if (setting.rotationMode == ENCODER_ROTATION_DIRECTION) {
+      valueText = delta > 0 ? setting.clockwiseValue : setting.counterClockwiseValue;
+      if (setting.outputType == TYPE_INT)
+        OscWiFi.send(targetHost.c_str(), targetPort, setting.rotationAddress.c_str(), valueText.toInt());
+      else if (setting.outputType == TYPE_STRING)
+        OscWiFi.send(targetHost.c_str(), targetPort, setting.rotationAddress.c_str(), valueText.c_str());
+      else
+        OscWiFi.send(targetHost.c_str(), targetPort, setting.rotationAddress.c_str(), valueText.toFloat());
+    } else {
+      if (setting.rangeSteps < 1) return;
+      if (!setting.logicalPositionInitialized) {
+        setting.logicalPosition = 0;
+        setting.logicalPositionInitialized = true;
+      }
+      int64_t next = static_cast<int64_t>(setting.logicalPosition) +
+                     (setting.clockwiseIncreases ? delta : -delta);
+      const int64_t maximum = static_cast<int64_t>(setting.rangeSteps);
+      if (setting.wrapAround) {
+        const int64_t count = maximum + 1;
+        next %= count;
+        if (next < 0) next += count;
+      } else {
+        if (next < 0) next = 0;
+        if (next > maximum) next = maximum;
+      }
+      setting.logicalPosition = static_cast<int32_t>(next);
+      const float ratio = static_cast<float>(next) / static_cast<float>(setting.rangeSteps);
+      const float mapped = setting.outputMin + ratio * (setting.outputMax - setting.outputMin);
+      if (setting.outputType == TYPE_INT) {
+        const int32_t value = static_cast<int32_t>(lroundf(mapped));
+        valueText = String(value);
+        OscWiFi.send(targetHost.c_str(), targetPort, setting.rotationAddress.c_str(), value);
+      } else if (setting.outputType == TYPE_STRING) {
+        valueText = encoderAmountString(mapped);
+        OscWiFi.send(targetHost.c_str(), targetPort,
+                     setting.rotationAddress.c_str(), valueText.c_str());
+      } else {
+        valueText = String(mapped, 3);
+        OscWiFi.send(targetHost.c_str(), targetPort, setting.rotationAddress.c_str(), mapped);
+      }
+    }
+    Serial.printf("[ChainOSCnano][OSC] source=%s rotation=%s value=%s target=%s:%u\n",
+                  setting.identity.c_str(), setting.rotationAddress.c_str(),
+                  valueText.c_str(), targetHost.c_str(), targetPort);
+    return;
+  }
   float mapped = 0;
   if (setting.sendIncrement) {
     mapped = clampValue(static_cast<float>(delta) * setting.incrementScale,

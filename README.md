@@ -11,13 +11,14 @@ M5NanoC6とM5Stack Chainデバイスを組み合わせ、コンパクトなOSC�
 
 ## 現在のバージョン
 
-### v1.2.4 — Encoderの範囲ループ設定に対応
+### v1.2.5 — Encoder v2に対応
 
-Encoderの絶対値モードに、最小値／最大値で停止するか範囲をループするかを選択できる設定を追加しました。
+ChainOSCminiをベースにEncoder v2へ対応し、新規Encoderの初期設定をv2形式へ変更しました。
 
-- 「範囲をループする」設定を追加
-- Device Presetの`wrapAround`を保存・復元
-- `wrapAround`省略時は従来互換としてループ有効で動作
+- Encoder v2の回転量／回転方向モード、保存、実行時処理に対応
+- Legacy設定からv2候補を確認して移行できるWeb UIを追加
+- Encoder Device Preset v1／v2のImport／Exportに対応
+- NVS／LittleFSに設定がない新規Encoderはv2設定で開始
 
 過去の変更内容は[`CHANGELOG.md`](CHANGELOG.md)を参照してください。
 
@@ -33,10 +34,10 @@ Encoderの絶対値モードに、最小値／最大値で停止するか範囲�
 
 ## Device Preset対応
 
-デバイス単位のプリセットにはChainOSCシリーズ共通の`ChainOSC-device-preset`形式を使用します。ChainOSCnanoのDevice PresetはすべてschemaVersion 1です。
+デバイス単位のプリセットにはChainOSCシリーズ共通の`ChainOSC-device-preset`形式を使用します。
 
 - Key v1：M5ChainOSC、ChainOSCmini、ChainOSCnano、ChainOSCPad、ChainOSC for Windowsと共有できます。
-- Encoder v1：M5ChainOSC、ChainOSCmini、ChainOSCnano、ChainOSCPadと共有できます。Encoder v2のImport／Exportには対応していません。
+- Encoder v1／v2：M5ChainOSC、ChainOSCmini、ChainOSCnano、ChainOSCPadと共有できます。v1はLegacy設定として読み込み、v2として保存した設定はv2でエクスポートします。
 - Angle v1、ToF v1、Joystick v1：M5ChainOSC、ChainOSCmini、ChainOSCnano間で共有できます。
 
 共有可否はDevice TypeとschemaVersion、各製品のImporter／Exporter対応に基づきます。詳細な共通仕様は[ChainOSC共通リポジトリ](https://github.com/shimez/ChainOSC)を参照してください。

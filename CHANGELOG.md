@@ -4,7 +4,26 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 
 形式はKeep a Changelogを参考にし、バージョン番号はSemantic Versioningに従います。
 
-## [Unreleased](https://github.com/shimez/ChainOSCnano/compare/v1.2.3...HEAD)
+## [Unreleased](https://github.com/shimez/ChainOSCnano/compare/v1.2.5...HEAD)
+
+## [1.2.5](https://github.com/shimez/ChainOSCnano/compare/v1.2.4...v1.2.5) - 2026-09-13
+
+### Added
+
+- Encoder v2の回転量／回転方向モード、LittleFS保存・読込、実行時OSC送信に対応
+- Legacy Encoder設定からv2候補を生成し、確認後に移行できるWeb UIを追加
+- Encoder Device Preset schemaVersion 2のImport／Exportに対応
+
+### Changed
+
+- NVS／LittleFSに設定がない新規Encoderの初期設定をv2形式へ変更
+- Encoder Device Preset v1はLegacy設定として読み込み、既存設定との互換性を維持
+
+## [1.2.4](https://github.com/shimez/ChainOSCnano/compare/v1.2.3...v1.2.4) - 2026-09-12
+
+### Changed
+
+- 接続中のChainデバイスカードに、現在の接続順を示す位置ラベルを追加
 
 ## [1.2.3](https://github.com/shimez/ChainOSCnano/compare/v1.2.2...v1.2.3) - 2026-09-04
 
@@ -199,4 +218,3 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 - ChainデバイスのID、種類、UIDのログ出力
 - M5NanoC6内蔵RGB LEDの初期化
 - v0.1.0向けREADME、テスト手順、第三者ライセンス表記
-

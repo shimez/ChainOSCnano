@@ -284,7 +284,26 @@ bool deviceFileStorageSave(const KeySetting& setting) {
 bool deviceFileStorageSave(const EncoderSetting& setting) {
   return saveDocument("encoder", setting.identity, setting.displayName,
                       [&](JsonObject root) {
+    root["settingsModel"] = static_cast<uint8_t>(setting.settingsModel);
     root["rotationAddress"] = setting.rotationAddress;
+    if (setting.settingsModel == ENCODER_SETTINGS_V2) {
+      root["rotationMode"] = static_cast<uint8_t>(setting.rotationMode);
+      root["rangeSteps"] = setting.rangeSteps;
+      root["wrap"] = setting.wrapAround;
+      root["clockwiseIncreases"] = setting.clockwiseIncreases;
+      root["outputMin"] = setting.outputMin;
+      root["outputMax"] = setting.outputMax;
+      root["clockwiseValue"] = setting.clockwiseValue;
+      root["counterClockwiseValue"] = setting.counterClockwiseValue;
+      root["outputType"] = static_cast<uint8_t>(setting.outputType);
+      root["pushMode"] = static_cast<uint8_t>(setting.pushMode);
+      addMessages(root, "press", setting.pressMessages,
+                  setting.pressMessageCount);
+      addMessages(root, "release", setting.releaseMessages,
+                  setting.releaseMessageCount);
+      addSequence(root["sequence"].to<JsonObject>(), setting.clickSequence);
+      return;
+    }
     root["sendIncrement"] = setting.sendIncrement;
     root["wrapAround"] = setting.wrapAround;
     root["absoluteInputMin"] = setting.absoluteInputMin;
@@ -374,10 +393,14 @@ DeviceFileLoadResult deviceFileStorageLoad(EncoderSetting& setting) {
   const auto result = loadDocument("encoder", setting.identity, document, bytes);
   if (result != DeviceFileLoadResult::Loaded) return result;
   EncoderSetting c = setting;
+  const int model = document["settingsModel"] | ENCODER_SETTINGS_LEGACY;
   const int outputType = document["outputType"] | -1;
-  const int clickMode = document["clickMode"] | -1;
+  const int clickMode = model == ENCODER_SETTINGS_V2
+                            ? (document["pushMode"] | -1)
+                            : (document["clickMode"] | -1);
   if (!readCommon(document, c.displayName) ||
       !document["rotationAddress"].is<const char*>() ||
+      (model != ENCODER_SETTINGS_LEGACY && model != ENCODER_SETTINGS_V2) ||
       outputType < TYPE_FLOAT || outputType > TYPE_STRING ||
       clickMode < MODE_PRESS_RELEASE || clickMode > MODE_SEQUENCE ||
       !readMessages(document.as<JsonObjectConst>(), "press", c.pressMessages,
@@ -388,6 +411,31 @@ DeviceFileLoadResult deviceFileStorageLoad(EncoderSetting& setting) {
       !readSequence(document["sequence"].as<JsonObjectConst>(), c.clickSequence))
     return DeviceFileLoadResult::Error;
   c.rotationAddress = document["rotationAddress"].as<const char*>();
+  c.settingsModel = static_cast<EncoderSettingsModel>(model);
+  if (c.settingsModel == ENCODER_SETTINGS_V2) {
+    const int rotationMode = document["rotationMode"] | -1;
+    const int rangeSteps = document["rangeSteps"] | -1;
+    if (rotationMode < ENCODER_ROTATION_AMOUNT ||
+        rotationMode > ENCODER_ROTATION_DIRECTION || rangeSteps < 1 ||
+        rangeSteps > 65535 || !document["wrap"].is<bool>() ||
+        !document["clockwiseIncreases"].is<bool>() ||
+        !document["clockwiseValue"].is<const char*>() ||
+        !document["counterClockwiseValue"].is<const char*>())
+      return DeviceFileLoadResult::Error;
+    c.rotationMode = static_cast<EncoderRotationMode>(rotationMode);
+    c.rangeSteps = static_cast<uint16_t>(rangeSteps);
+    c.wrapAround = document["wrap"].as<bool>();
+    c.clockwiseIncreases = document["clockwiseIncreases"].as<bool>();
+    c.outputMin = document["outputMin"].as<float>();
+    c.outputMax = document["outputMax"].as<float>();
+    c.clockwiseValue = document["clockwiseValue"].as<const char*>();
+    c.counterClockwiseValue = document["counterClockwiseValue"].as<const char*>();
+    c.outputType = static_cast<ValueType>(outputType);
+    c.pushMode = static_cast<KeyMode>(clickMode);
+    c.clickMode = c.pushMode;
+    setting = c;
+    return DeviceFileLoadResult::Loaded;
+  }
   c.sendIncrement = document["sendIncrement"] | false;
   c.wrapAround = document["wrapAround"] | true;
   c.absoluteInputMin = document["absoluteInputMin"].as<float>();
