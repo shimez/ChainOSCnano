@@ -4,7 +4,18 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 
 形式はKeep a Changelogを参考にし、バージョン番号はSemantic Versioningに従います。
 
-## [Unreleased](https://github.com/shimez/ChainOSCnano/compare/v1.2.5...HEAD)
+## [Unreleased](https://github.com/shimez/ChainOSCnano/compare/v1.2.6...HEAD)
+
+## [1.2.6](https://github.com/shimez/ChainOSCnano/compare/v1.2.5...v1.2.6) - 2026-09-14
+
+### Changed
+
+- Angle／Joystick／ToFのDeadband表記をMinimum Changeへ整理
+
+### Fixed
+
+- Angleの分解能変更時にruntime baselineをリセットし、直後の不要なOSC送信を防止
+- JoystickのMinimum Change baselineをX／Y各軸で独立して更新
 
 ## [1.2.5](https://github.com/shimez/ChainOSCnano/compare/v1.2.4...v1.2.5) - 2026-09-13
 
