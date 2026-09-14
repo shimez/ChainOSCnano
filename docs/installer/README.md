@@ -4,12 +4,8 @@ ChainOSCnanoのファームウェアをM5NanoC6へブラウザーから書き込
 
 現在の公開版は`1.2.6`です。
 
-- Version 1.2.6: Encoder v2とLegacyからの移行、Encoder Device Preset v1／v2、新規Encoderのv2初期設定に対応
-- Version 1.2.4: 接続中のChainデバイスカードに現在の接続順を示す位置ラベルを追加
-- Version 1.2.3: Web UIの入力検証を強化し、通常画面とAP Modeへfaviconを追加
-- Version 1.2.1: AP Modeのキャプティブポータルから全設定を削除する機能を追加
-- Version 1.2.2: Encoder／Joystick／Angle／ToF／Push Sequenceの入力検証と警告表示を強化
-- Version 1.2.0: Web UIからLittleFSとNVSの全設定を削除して再起動する機能を追加
+変更履歴はリポジトリの `CHANGELOG.md` を参照してください。
+
 
 ## 公開URL
 
