@@ -539,7 +539,7 @@ void pollJoysticks(ChainPortContext& port) {
     else {
       const bool cx=abs((int)x-(int)device.lastJoystickX)>=max(1,setting->deadband);
       const bool cy=abs((int)y-(int)device.lastJoystickY)>=max(1,setting->deadband);
-      if(cx||cy){device.lastJoystickX=x;device.lastJoystickY=y;oscSendChainJoystickAxes(device.uid,UID_SIZE,x,y,port.portMask,cx,cy);}
+      if(cx||cy){if(cx)device.lastJoystickX=x;if(cy)device.lastJoystickY=y;oscSendChainJoystickAxes(device.uid,UID_SIZE,x,y,port.portMask,cx,cy);}
     }
     const uint8_t button=rawButton?1:0;
     if(!device.buttonInitialized){device.lastButtonStatus=button;device.buttonInitialized=true;}
