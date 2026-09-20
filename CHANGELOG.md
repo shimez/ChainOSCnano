@@ -4,7 +4,13 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 
 形式はKeep a Changelogを参考にし、バージョン番号はSemantic Versioningに従います。
 
-## [Unreleased](https://github.com/shimez/ChainOSCnano/compare/v1.2.6...HEAD)
+## [Unreleased](https://github.com/shimez/ChainOSCnano/compare/v1.2.7...HEAD)
+
+## [1.2.7](https://github.com/shimez/ChainOSCnano/compare/v1.2.6...v1.2.7) - 2026-09-20
+
+### Added
+
+- Encoder v2のプッシュ操作にRotation Resetを追加し、指定値へ回転状態をリセットできるよう対応
 
 ## [1.2.6](https://github.com/shimez/ChainOSCnano/compare/v1.2.5...v1.2.6) - 2026-09-14
 
