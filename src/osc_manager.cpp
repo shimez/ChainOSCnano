@@ -104,6 +104,60 @@ void sendKeyValue(KeySetting& setting, bool pressed) {
 }
 
 void sendEncoderClickValue(EncoderSetting& setting, bool pressed) {
+  if (setting.settingsModel == ENCODER_SETTINGS_V2 &&
+      setting.pushMode == MODE_ROTATION_RESET) {
+    if (!pressed || !encoderSettingsRotationResetValueIsValid(setting)) return;
+    if (setting.rotationMode == ENCODER_ROTATION_AMOUNT) {
+      const double reset = strtod(setting.resetValue.c_str(), nullptr);
+      const double position =
+          (reset - static_cast<double>(setting.outputMin)) *
+          static_cast<double>(setting.rangeSteps) /
+          (static_cast<double>(setting.outputMax) -
+           static_cast<double>(setting.outputMin));
+      const double nearest = round(position);
+      const double tolerance =
+          fmin(0.25, 8.0 * 1.1920929e-7 *
+                         fmax(1.0, static_cast<double>(setting.rangeSteps)));
+      if (fabs(position - nearest) <= tolerance) {
+        setting.logicalPosition = static_cast<int32_t>(nearest);
+        setting.logicalPositionInitialized = true;
+        setting.pendingReset = false;
+      } else {
+        setting.pendingLowerGrid = static_cast<int32_t>(floor(position));
+        setting.pendingUpperGrid = static_cast<int32_t>(ceil(position));
+        setting.pendingReset = true;
+      }
+    }
+    if (WiFi.status() != WL_CONNECTED) return;
+    if (setting.rotationMode == ENCODER_ROTATION_AMOUNT) {
+      const float value = strtof(setting.resetValue.c_str(), nullptr);
+      if (setting.outputType == TYPE_INT)
+        OscWiFi.send(targetHost.c_str(), targetPort,
+                     setting.rotationAddress.c_str(),
+                     static_cast<int32_t>(lroundf(value)));
+      else if (setting.outputType == TYPE_STRING) {
+        const String text = encoderAmountString(value);
+        OscWiFi.send(targetHost.c_str(), targetPort,
+                     setting.rotationAddress.c_str(), text.c_str());
+      } else
+        OscWiFi.send(targetHost.c_str(), targetPort,
+                     setting.rotationAddress.c_str(), value);
+    } else if (setting.outputType == TYPE_INT) {
+      OscWiFi.send(targetHost.c_str(), targetPort,
+                   setting.rotationAddress.c_str(),
+                   static_cast<int32_t>(strtol(setting.resetValue.c_str(),
+                                               nullptr, 10)));
+    } else if (setting.outputType == TYPE_STRING) {
+      OscWiFi.send(targetHost.c_str(), targetPort,
+                   setting.rotationAddress.c_str(),
+                   setting.resetValue.c_str());
+    } else {
+      OscWiFi.send(targetHost.c_str(), targetPort,
+                   setting.rotationAddress.c_str(),
+                   strtof(setting.resetValue.c_str(), nullptr));
+    }
+    return;
+  }
   if (WiFi.status() != WL_CONNECTED) return;
   if (setting.clickMode == MODE_SEQUENCE) {
     if (!pressed) return;
@@ -161,8 +215,21 @@ void sendEncoderRotationValue(EncoderSetting& setting, int16_t absoluteValue,
         setting.logicalPosition = 0;
         setting.logicalPositionInitialized = true;
       }
-      int64_t next = static_cast<int64_t>(setting.logicalPosition) +
-                     (setting.clockwiseIncreases ? delta : -delta);
+      const int32_t amountDelta =
+          setting.clockwiseIncreases ? static_cast<int32_t>(delta)
+                                     : -static_cast<int32_t>(delta);
+      int64_t next = 0;
+      if (setting.pendingReset) {
+        if (amountDelta > 0)
+          next = static_cast<int64_t>(setting.pendingUpperGrid) +
+                 (amountDelta - 1);
+        else
+          next = static_cast<int64_t>(setting.pendingLowerGrid) -
+                 ((-static_cast<int64_t>(amountDelta)) - 1);
+        setting.pendingReset = false;
+      } else {
+        next = static_cast<int64_t>(setting.logicalPosition) + amountDelta;
+      }
       const int64_t maximum = static_cast<int64_t>(setting.rangeSteps);
       if (setting.wrapAround) {
         const int64_t count = maximum + 1;
@@ -405,7 +472,8 @@ bool oscSendChainEncoderClick(const uint8_t* uidBytes, size_t uidLength,
       String("chain:") + uid, String("Chain Encoder ") + uid);
   if (setting) {
     sendEncoderClickValue(*setting, pressed);
-    return setting->clickMode == MODE_SEQUENCE;
+    return (setting->settingsModel == ENCODER_SETTINGS_V2
+                ? setting->pushMode : setting->clickMode) == MODE_SEQUENCE;
   }
   return false;
 }

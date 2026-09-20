@@ -5,7 +5,11 @@
 constexpr uint8_t MAX_KEY_OSC_MESSAGES = 8;
 
 enum ValueType : uint8_t { TYPE_FLOAT = 0, TYPE_INT = 1, TYPE_STRING = 2 };
-enum KeyMode : uint8_t { MODE_PRESS_RELEASE = 0, MODE_SEQUENCE = 1 };
+enum KeyMode : uint8_t {
+  MODE_PRESS_RELEASE = 0,
+  MODE_SEQUENCE = 1,
+  MODE_ROTATION_RESET = 2
+};
 
 struct KeyOscMessage {
   String address;

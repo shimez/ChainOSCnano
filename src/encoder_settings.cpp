@@ -84,6 +84,8 @@ bool sameSetting(const EncoderSetting& left, const EncoderSetting& right) {
        left.clockwiseValue != right.clockwiseValue ||
        left.counterClockwiseValue != right.counterClockwiseValue ||
        left.pushMode != right.pushMode ||
+       left.resetValue != right.resetValue ||
+       left.resetValueConfigured != right.resetValueConfigured ||
        left.clickSequence.address != right.clickSequence.address ||
        left.clickSequence.valueType != right.clickSequence.valueType ||
        fabsf(left.clickSequence.start - right.clickSequence.start) > 0.00001f ||
@@ -185,6 +187,7 @@ EncoderSetting* encoderSettingsAt(size_t index) {
 
 bool amountOutputIsValid(const EncoderSetting& candidate);
 bool directionOutputIsValid(const EncoderSetting& candidate);
+bool encoderSettingsRotationResetValueIsValid(const EncoderSetting& candidate);
 
 bool encoderSettingsSave(const EncoderSetting& candidate) {
   if (candidate.identity.isEmpty() || candidate.displayName.isEmpty() ||
@@ -200,10 +203,11 @@ bool encoderSettingsSave(const EncoderSetting& candidate) {
        (candidate.rotationMode < ENCODER_ROTATION_AMOUNT ||
         candidate.rotationMode > ENCODER_ROTATION_DIRECTION ||
         candidate.rangeSteps < 1 || candidate.pushMode < MODE_PRESS_RELEASE ||
-        candidate.pushMode > MODE_SEQUENCE ||
+        candidate.pushMode > MODE_ROTATION_RESET ||
         (candidate.rotationMode == ENCODER_ROTATION_AMOUNT
              ? !amountOutputIsValid(candidate)
-             : !directionOutputIsValid(candidate)))))
+             : !directionOutputIsValid(candidate)) ||
+        !encoderSettingsRotationResetValueIsValid(candidate))))
     return false;
   for (uint8_t i = 0; i < candidate.pressMessageCount; ++i)
     if (!validAddress(candidate.pressMessages[i].address)) return false;
@@ -214,10 +218,34 @@ bool encoderSettingsSave(const EncoderSetting& candidate) {
     if (settings[i].identity == candidate.identity) destination = &settings[i];
   if (!destination || !writeSetting(candidate)) return false;
   const uint8_t portMask = destination->connectedPortMask;
+  const bool preserveRuntime =
+      destination->settingsModel == ENCODER_SETTINGS_V2 &&
+      candidate.settingsModel == ENCODER_SETTINGS_V2 &&
+      destination->rotationMode == candidate.rotationMode &&
+      destination->rangeSteps == candidate.rangeSteps &&
+      destination->wrapAround == candidate.wrapAround &&
+      destination->clockwiseIncreases == candidate.clockwiseIncreases &&
+      destination->outputMin == candidate.outputMin &&
+      destination->outputMax == candidate.outputMax &&
+      destination->outputType == candidate.outputType;
+  const int32_t logicalPosition = destination->logicalPosition;
+  const bool logicalPositionInitialized = destination->logicalPositionInitialized;
+  const bool pendingReset = destination->pendingReset;
+  const int32_t pendingLowerGrid = destination->pendingLowerGrid;
+  const int32_t pendingUpperGrid = destination->pendingUpperGrid;
   *destination = candidate;
   destination->connectedPortMask = portMask;
   destination->boundedAbsoluteInitialized = false;
-  destination->logicalPositionInitialized = false;
+  if (preserveRuntime) {
+    destination->logicalPosition = logicalPosition;
+    destination->logicalPositionInitialized = logicalPositionInitialized;
+    destination->pendingReset = pendingReset;
+    destination->pendingLowerGrid = pendingLowerGrid;
+    destination->pendingUpperGrid = pendingUpperGrid;
+  } else {
+    destination->logicalPositionInitialized = false;
+    destination->pendingReset = false;
+  }
   keySettingsNormalizeSequence(destination->clickSequence);
   NANO_VERBOSE_LOGF("[ChainOSCnano][ENCCFG] saved identity=%s mode=%u press=%u release=%u\n",
                 candidate.identity.c_str(),
@@ -292,6 +320,29 @@ bool directionOutputIsValid(const EncoderSetting& candidate) {
          parseFloat32Strict(candidate.counterClockwiseValue, counterClockwise);
 }
 
+bool encoderSettingsRotationResetValueIsValid(const EncoderSetting& candidate) {
+  if (candidate.pushMode != MODE_ROTATION_RESET) return true;
+  if (candidate.rotationMode == ENCODER_ROTATION_AMOUNT) {
+    float value = 0;
+    if (!parseFloat32Strict(candidate.resetValue, value) ||
+        value < candidate.outputMin || value > candidate.outputMax)
+      return false;
+    if (candidate.outputType == TYPE_INT) {
+      const double rounded = round(static_cast<double>(value));
+      if (rounded < INT32_MIN || rounded > INT32_MAX) return false;
+    }
+    return true;
+  }
+  if (candidate.resetValue.length() > 128) return false;
+  if (candidate.outputType == TYPE_STRING) return true;
+  if (candidate.outputType == TYPE_INT) {
+    int32_t value = 0;
+    return parseInt32Strict(candidate.resetValue, value);
+  }
+  float value = 0;
+  return parseFloat32Strict(candidate.resetValue, value);
+}
+
 namespace {
 String legacyDirectionValue(const EncoderSetting& legacy, int direction) {
   const float low = min(legacy.outputMin, legacy.outputMax);
@@ -354,6 +405,16 @@ bool encoderSettingsDelete(const String& identity) {
   settings[settingCount] = EncoderSetting();
   saveKnownDevices();
   return true;
+}
+
+void encoderSettingsResetRuntime(const String& identity) {
+  for (size_t i = 0; i < settingCount; ++i) {
+    if (settings[i].identity != identity) continue;
+    settings[i].logicalPosition = 0;
+    settings[i].logicalPositionInitialized = false;
+    settings[i].pendingReset = false;
+    return;
+  }
 }
 
 void encoderSettingsBeginPortUpdate(uint8_t portMask) {

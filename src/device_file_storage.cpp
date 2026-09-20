@@ -297,6 +297,8 @@ bool deviceFileStorageSave(const EncoderSetting& setting) {
       root["counterClockwiseValue"] = setting.counterClockwiseValue;
       root["outputType"] = static_cast<uint8_t>(setting.outputType);
       root["pushMode"] = static_cast<uint8_t>(setting.pushMode);
+      if (setting.resetValueConfigured)
+        root["resetValue"] = setting.resetValue;
       addMessages(root, "press", setting.pressMessages,
                   setting.pressMessageCount);
       addMessages(root, "release", setting.releaseMessages,
@@ -402,7 +404,9 @@ DeviceFileLoadResult deviceFileStorageLoad(EncoderSetting& setting) {
       !document["rotationAddress"].is<const char*>() ||
       (model != ENCODER_SETTINGS_LEGACY && model != ENCODER_SETTINGS_V2) ||
       outputType < TYPE_FLOAT || outputType > TYPE_STRING ||
-      clickMode < MODE_PRESS_RELEASE || clickMode > MODE_SEQUENCE ||
+      clickMode < MODE_PRESS_RELEASE ||
+      clickMode > (model == ENCODER_SETTINGS_V2
+                       ? MODE_ROTATION_RESET : MODE_SEQUENCE) ||
       !readMessages(document.as<JsonObjectConst>(), "press", c.pressMessages,
                     c.pressMessageCount) ||
       !readMessages(document.as<JsonObjectConst>(), "release", c.releaseMessages,
@@ -432,7 +436,15 @@ DeviceFileLoadResult deviceFileStorageLoad(EncoderSetting& setting) {
     c.counterClockwiseValue = document["counterClockwiseValue"].as<const char*>();
     c.outputType = static_cast<ValueType>(outputType);
     c.pushMode = static_cast<KeyMode>(clickMode);
+    c.resetValueConfigured = document["resetValue"].is<const char*>();
+    c.resetValue = c.resetValueConfigured
+                       ? document["resetValue"].as<const char*>()
+                       : String("0.5");
     c.clickMode = c.pushMode;
+    if (c.pushMode == MODE_ROTATION_RESET &&
+        (!c.resetValueConfigured ||
+         !encoderSettingsRotationResetValueIsValid(c)))
+      return DeviceFileLoadResult::Error;
     setting = c;
     return DeviceFileLoadResult::Loaded;
   }

@@ -35,8 +35,13 @@ struct EncoderSetting {
   String clockwiseValue = "0.05";
   String counterClockwiseValue = "-0.05";
   KeyMode pushMode = MODE_PRESS_RELEASE;
+  String resetValue = "0.5";
+  bool resetValueConfigured = false;
   int32_t logicalPosition = 0;
   bool logicalPositionInitialized = false;
+  bool pendingReset = false;
+  int32_t pendingLowerGrid = 0;
+  int32_t pendingUpperGrid = 0;
   KeyMode clickMode = MODE_PRESS_RELEASE;
   KeyOscMessage pressMessages[MAX_KEY_OSC_MESSAGES];
   KeyOscMessage releaseMessages[MAX_KEY_OSC_MESSAGES];
@@ -49,6 +54,7 @@ struct EncoderSetting {
 bool encoderSettingsBuildV2MigrationCandidate(const EncoderSetting& legacy,
                                                EncoderSetting& candidate);
 bool encoderSettingsCanLosslesslyMigrate(const EncoderSetting& legacy);
+bool encoderSettingsRotationResetValueIsValid(const EncoderSetting& candidate);
 
 void encoderSettingsSetup();
 EncoderSetting* encoderSettingsEnsure(const String& identity,
@@ -57,5 +63,6 @@ size_t encoderSettingsCount();
 EncoderSetting* encoderSettingsAt(size_t index);
 bool encoderSettingsSave(const EncoderSetting& candidate);
 bool encoderSettingsDelete(const String& identity);
+void encoderSettingsResetRuntime(const String& identity);
 void encoderSettingsBeginPortUpdate(uint8_t portMask);
 void encoderSettingsMarkConnected(const String& identity, uint8_t portMask);
