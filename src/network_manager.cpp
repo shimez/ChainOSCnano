@@ -197,6 +197,31 @@ String pageStart(const char* title) {
   return html;
 }
 
+String provisioningPageStart() {
+  String html;
+  html.reserve(6144);
+  html += F("<!doctype html><html lang='");
+  html += isJapaneseUi() ? F("ja") : F("en");
+  html += F("'><head><meta charset='utf-8'>"
+            "<meta name='viewport' content='width=device-width,initial-scale=1'>"
+            "<title>ChainOSCnano Wi-Fi Setup</title><style>"
+            "body{font-family:sans-serif;margin:16px;background:#f5f5f5;color:#18212f}"
+            "main{max-width:720px;margin:0 auto}"
+            ".card{background:#fff;padding:16px;border-radius:10px;margin-bottom:16px;box-shadow:0 2px 5px rgba(0,0,0,.1)}"
+            "h1{font-size:1.4rem;margin:0 0 16px}h2{font-size:1.1rem;margin:0 0 12px}"
+            "label{display:block;font-weight:700;margin:14px 0 6px}"
+            "input,select,button{box-sizing:border-box;font:inherit}"
+            "input,select{width:100%;padding:10px;border:1px solid #9aa4b2;border-radius:6px;background:#fff;color:#18212f}"
+            "button{margin-top:16px;padding:10px 16px;border:0;border-radius:6px;background:#2563eb;color:#fff;font-weight:700;cursor:pointer}"
+            "button:disabled{opacity:.55;cursor:default}"
+            ".language-row{display:flex;align-items:center;justify-content:space-between;gap:16px}"
+            ".language-row h2{margin:0}.language-row form{min-width:140px}"
+            ".note{color:#5b6472;line-height:1.5}.status{color:#087f5b}.error{color:#c92a2a}"
+            ".danger-zone{border-left:4px solid #dc2626}.danger-zone button{background:#dc2626}"
+            "</style></head><body><main>");
+  return html;
+}
+
 void sendPage(String html) {
   html += F("</main></body></html>");
   server.send(200, "text/html; charset=utf-8", html);
@@ -1276,7 +1301,7 @@ bool joystickSettingFromJson(JsonObjectConst object, JoystickSetting& candidate,
 }
 
 void sendProvisioningPage(const String& message = String()) {
-  String html = pageStart("ChainOSCnano Wi-Fi Setup");
+  String html = provisioningPageStart();
   html += F("<h1>ChainOSCnano Settings</h1><div class='card language-row'><h2>");
   html += tr("Language", "言語");
   html += F("</h2><form action='/set_language' method='post'><select name='language' onchange='this.form.submit()'><option value='en'");
