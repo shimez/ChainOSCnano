@@ -4,7 +4,14 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 
 形式はKeep a Changelogを参考にし、バージョン番号はSemantic Versioningに従います。
 
-## [Unreleased](https://github.com/shimez/ChainOSCnano/compare/v1.2.7...HEAD)
+## [Unreleased](https://github.com/shimez/ChainOSCnano/compare/v1.2.8...HEAD)
+
+## [1.2.8](https://github.com/shimez/ChainOSCnano/compare/v1.2.7...v1.2.8) - 2026-09-21
+
+### Changed
+
+- オンボードRGB LEDのネットワーク状態表示をChainOSCPad準拠へ統一し、接続中は青の2回点滅、接続済みは緑の常時点灯、AP Modeは赤の点滅へ変更
+- OSC送信時にオンボードRGB LEDを一時消灯するactivity表示を追加
 
 ## [1.2.7](https://github.com/shimez/ChainOSCnano/compare/v1.2.6...v1.2.7) - 2026-09-20
 

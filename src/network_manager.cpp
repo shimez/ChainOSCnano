@@ -3186,7 +3186,8 @@ void networkSetup() {
     const unsigned long startedAtMs = millis();
     while (WiFi.status() != WL_CONNECTED &&
            millis() - startedAtMs < WIFI_CONNECT_TIMEOUT_MS) {
-      delay(300);
+      nanoStatusLedUpdate();
+      delay(10);
     }
     if (WiFi.status() == WL_CONNECTED) {
       handleConnected();

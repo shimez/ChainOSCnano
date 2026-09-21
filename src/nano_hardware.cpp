@@ -10,8 +10,10 @@ namespace {
 
 Adafruit_NeoPixel rgbLed(RGB_LED_COUNT, RGB_LED_PIN, NEO_GRB + NEO_KHZ800);
 NetworkLedState networkLedState = NetworkLedState::CONNECTING;
-unsigned long lastBlinkMs = 0;
-bool blinkOn = true;
+unsigned long lastLedUpdateMs = 0;
+unsigned long networkStateStartedAtMs = 0;
+unsigned long activityEndsAtMs = 0;
+unsigned long activityReadyAtMs = 0;
 bool rawButtonPressed = false;
 bool stableButtonPressed = false;
 unsigned long buttonChangedAtMs = 0;
@@ -22,21 +24,45 @@ bool identifyActive(unsigned long now) {
          static_cast<long>(identifyUntilMs - now) > 0;
 }
 
+bool before(unsigned long now, unsigned long deadline) {
+  return static_cast<long>(now - deadline) < 0;
+}
+
+bool networkLedOn(unsigned long now) {
+  const unsigned long elapsed = now - networkStateStartedAtMs;
+  if (networkLedState == NetworkLedState::CONNECTED) return true;
+  if (networkLedState == NetworkLedState::AP_MODE)
+    return elapsed % (STATUS_LED_AP_ON_MS + STATUS_LED_AP_OFF_MS) <
+           STATUS_LED_AP_ON_MS;
+  const unsigned long phase =
+      elapsed % (STATUS_LED_CONNECTING_ON_MS * 2 +
+                 STATUS_LED_CONNECTING_OFF_MS + STATUS_LED_CONNECTING_GAP_MS);
+  return phase < STATUS_LED_CONNECTING_ON_MS ||
+         (phase >= STATUS_LED_CONNECTING_ON_MS +
+                       STATUS_LED_CONNECTING_OFF_MS &&
+          phase < STATUS_LED_CONNECTING_ON_MS * 2 +
+                      STATUS_LED_CONNECTING_OFF_MS);
+}
+
 void renderLed(unsigned long now) {
   if (identifyActive(now) || stableButtonPressed) {
     nanoHardwareSetColor(255, 64, 0);
     return;
   }
+  if (before(now, activityEndsAtMs) || !networkLedOn(now)) {
+    nanoHardwareSetColor(0, 0, 0);
+    return;
+  }
   switch (networkLedState) {
     case NetworkLedState::CONNECTED:
-      nanoHardwareSetColor(0, 255, 255);
+      nanoHardwareSetColor(0, 255, 0);
       break;
     case NetworkLedState::AP_MODE:
       nanoHardwareSetColor(255, 0, 0);
       break;
     case NetworkLedState::CONNECTING:
     default:
-      nanoHardwareSetColor(0, 0, blinkOn ? 255 : 0);
+      nanoHardwareSetColor(0, 0, 255);
       break;
   }
 }
@@ -55,6 +81,7 @@ void nanoHardwareSetup() {
   rawButtonPressed = pressed;
   stableButtonPressed = pressed;
   buttonChangedAtMs = millis();
+  networkStateStartedAtMs = millis();
   if (CHAIN_POWER_CONTROL_ENABLED) {
     pinMode(CHAIN_POWER_PIN, OUTPUT);
     digitalWrite(CHAIN_POWER_PIN, CHAIN_POWER_ACTIVE_LEVEL);
@@ -79,12 +106,10 @@ void nanoHardwareSetup() {
 }
 
 void nanoSetNetworkLedState(NetworkLedState state) {
+  if (networkLedState == state) return;
   networkLedState = state;
-  if (state == NetworkLedState::CONNECTING) {
-    blinkOn = true;
-    lastBlinkMs = millis();
-  }
-  renderLed(millis());
+  networkStateStartedAtMs = millis();
+  renderLed(networkStateStartedAtMs);
 }
 
 void nanoHardwareUpdate() {
@@ -106,12 +131,24 @@ void nanoHardwareUpdate() {
     identifyUntilMs = 0;
     renderLed(now);
   }
-  if (networkLedState == NetworkLedState::CONNECTING &&
-      now - lastBlinkMs >= 500) {
-    lastBlinkMs = now;
-    blinkOn = !blinkOn;
-    renderLed(now);
-  }
+  nanoStatusLedUpdate();
+}
+
+void nanoStatusLedUpdate() {
+  const unsigned long now = millis();
+  if (!RGB_LED_ENABLED ||
+      now - lastLedUpdateMs < STATUS_LED_UPDATE_INTERVAL_MS)
+    return;
+  lastLedUpdateMs = now;
+  renderLed(now);
+}
+
+void nanoNotifyOscTx() {
+  const unsigned long now = millis();
+  if (before(now, activityEndsAtMs) || before(now, activityReadyAtMs)) return;
+  activityEndsAtMs = now + STATUS_LED_ACTIVITY_OFF_MS;
+  activityReadyAtMs = activityEndsAtMs + STATUS_LED_ACTIVITY_BASE_GAP_MS;
+  if (RGB_LED_ENABLED) renderLed(now);
 }
 
 bool nanoIdentifyDevice(const String& identity) {

@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 static constexpr const char* APP_NAME = "ChainOSCnano";
-static constexpr const char* APP_VERSION = "1.2.7";
+static constexpr const char* APP_VERSION = "1.2.8";
 static constexpr unsigned long SERIAL_BAUD = 115200;
 static constexpr unsigned long BOOT_DIAGNOSTICS_DELAY_MS = 5000;
 static constexpr unsigned long HEARTBEAT_INTERVAL_MS = 5000;
@@ -24,6 +24,14 @@ static constexpr uint8_t RGB_LED_COUNT = LED_COUNT;
 static constexpr uint8_t RGB_LED_BRIGHTNESS = 24;
 static constexpr uint8_t BUILT_IN_BUTTON_PIN = 9;
 static constexpr unsigned long BUTTON_DEBOUNCE_MS = 20;
+static constexpr unsigned long STATUS_LED_AP_ON_MS = 500;
+static constexpr unsigned long STATUS_LED_AP_OFF_MS = 500;
+static constexpr unsigned long STATUS_LED_CONNECTING_ON_MS = 100;
+static constexpr unsigned long STATUS_LED_CONNECTING_OFF_MS = 100;
+static constexpr unsigned long STATUS_LED_CONNECTING_GAP_MS = 700;
+static constexpr unsigned long STATUS_LED_ACTIVITY_OFF_MS = 50;
+static constexpr unsigned long STATUS_LED_ACTIVITY_BASE_GAP_MS = 50;
+static constexpr unsigned long STATUS_LED_UPDATE_INTERVAL_MS = 10;
 
 // M5NanoC6 Grove/Chain UART.
 static constexpr uint8_t CHAIN_G1_G2_RX_PIN = 1;
