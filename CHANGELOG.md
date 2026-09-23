@@ -4,7 +4,13 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 
 形式はKeep a Changelogを参考にし、バージョン番号はSemantic Versioningに従います。
 
-## [Unreleased](https://github.com/shimez/ChainOSCnano/compare/v1.2.8...HEAD)
+## [Unreleased](https://github.com/shimez/ChainOSCnano/compare/v1.2.9...HEAD)
+
+## [1.2.9](https://github.com/shimez/ChainOSCnano/compare/v1.2.8...v1.2.9) - 2026-09-23
+
+### Changed
+
+- AP ModeのWi-Fi Setup Pageを専用の軽量HTML／CSS／JavaScriptへ変更し、provisioning時に通常Web UI用の不要なCSS／JavaScriptを生成しないことでページ生成時のメモリ使用量を削減
 
 ## [1.2.8](https://github.com/shimez/ChainOSCnano/compare/v1.2.7...v1.2.8) - 2026-09-21
 
