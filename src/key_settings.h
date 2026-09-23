@@ -5,6 +5,8 @@
 constexpr uint8_t MAX_KEY_OSC_MESSAGES = 8;
 
 enum ValueType : uint8_t { TYPE_FLOAT = 0, TYPE_INT = 1, TYPE_STRING = 2 };
+enum class SequenceProgressionMode : uint8_t { Loop = 0, PingPong = 1 };
+enum class SequenceDirection : uint8_t { Forward, Backward };
 enum KeyMode : uint8_t {
   MODE_PRESS_RELEASE = 0,
   MODE_SEQUENCE = 1,
@@ -24,7 +26,34 @@ struct KeySequenceConfig {
   float end = 10;
   float step = 1;
   float current = 0;
+  SequenceProgressionMode progressionMode = SequenceProgressionMode::Loop;
+  SequenceDirection direction = SequenceDirection::Forward;
 };
+
+inline void advanceSequence(KeySequenceConfig& sequence) {
+  const float value = sequence.current;
+  if (sequence.progressionMode == SequenceProgressionMode::PingPong) {
+    if (sequence.start == sequence.end) return;
+    if (sequence.direction == SequenceDirection::Forward) {
+      const float next = value + sequence.step;
+      if (sequence.step > 0 ? next >= sequence.end : next <= sequence.end) {
+        sequence.current = sequence.end;
+        sequence.direction = SequenceDirection::Backward;
+      } else sequence.current = next;
+    } else {
+      const float next = value - sequence.step;
+      if (sequence.step > 0 ? next <= sequence.start : next >= sequence.start) {
+        sequence.current = sequence.start;
+        sequence.direction = SequenceDirection::Forward;
+      } else sequence.current = next;
+    }
+    return;
+  }
+  float next = value + sequence.step;
+  if ((sequence.step >= 0 && next > sequence.end + 1e-6f) ||
+      (sequence.step < 0 && next < sequence.end - 1e-6f)) next = sequence.start;
+  sequence.current = next;
+}
 
 struct KeySetting {
   String identity;

@@ -56,6 +56,7 @@ constexpr char DEVICE_PRESET_FORMAT_NAME[] = "ChainOSC-device-preset";
 constexpr char LEGACY_DEVICE_PRESET_FORMAT_NAME[] = "M5ChainOSC-device-preset";
 constexpr int DEVICE_PRESET_SCHEMA_VERSION = 1;
 constexpr int DEVICE_PRESET_SCHEMA_VERSION_V2 = 2;
+constexpr int DEVICE_PRESET_SCHEMA_VERSION_PINGPONG = 3;
 constexpr int CHAIN_KEY_DEVICE_TYPE = 3;
 constexpr int CHAIN_ENCODER_DEVICE_TYPE = 1;
 constexpr int CHAIN_ANGLE_DEVICE_TYPE = 2;
@@ -285,7 +286,8 @@ String sequenceJson(const KeySequenceConfig& sequence) {
          ",\"type\":" + String(static_cast<int>(sequence.valueType)) +
          ",\"start\":" + String(sequence.start, 6) +
          ",\"end\":" + String(sequence.end, 6) +
-         ",\"step\":" + String(sequence.step, 6) + "}";
+         ",\"step\":" + String(sequence.step, 6) +
+          ",\"progressionMode\":" + String(static_cast<int>(sequence.progressionMode)) + "}";
 }
 
 String sequenceV2Json(const KeySequenceConfig& sequence) {
@@ -293,7 +295,8 @@ String sequenceV2Json(const KeySequenceConfig& sequence) {
          ",\"type\":" + String(static_cast<int>(sequence.valueType)) +
          ",\"start\":" + String(sequence.start, 9) +
          ",\"end\":" + String(sequence.end, 9) +
-         ",\"step\":" + String(sequence.step, 9) + "}";
+         ",\"step\":" + String(sequence.step, 9) +
+          ",\"progressionMode\":" + String(static_cast<int>(sequence.progressionMode)) + "}";
 }
 
 String encoderV2DirectionValueJson(const String& value, ValueType type) {
@@ -331,7 +334,7 @@ String keySettingJson(const KeySetting& setting, bool includeIdentity) {
               ",\"builtIn\":" + String(setting.builtIn ? "true" : "false");
   } else {
     output += String("\"format\":") + jsonString(DEVICE_PRESET_FORMAT_NAME) +
-              ",\"schemaVersion\":" + String(DEVICE_PRESET_SCHEMA_VERSION) +
+              ",\"schemaVersion\":" + String(DEVICE_PRESET_SCHEMA_VERSION_PINGPONG) +
               ",\"deviceType\":" + String(CHAIN_KEY_DEVICE_TYPE) +
               ",\"deviceTypeName\":\"Key\"";
   }
@@ -355,8 +358,7 @@ String encoderSettingJson(const EncoderSetting& setting, bool includeIdentity) {
   } else {
     output += String("\"format\":") + jsonString(DEVICE_PRESET_FORMAT_NAME) +
               ",\"schemaVersion\":" +
-              String(encoderV2Preset ? DEVICE_PRESET_SCHEMA_VERSION_V2
-                                     : DEVICE_PRESET_SCHEMA_VERSION) +
+              String(DEVICE_PRESET_SCHEMA_VERSION_PINGPONG) +
               ",\"deviceType\":" + String(CHAIN_ENCODER_DEVICE_TYPE) +
               ",\"deviceTypeName\":\"Encoder\"";
   }
@@ -466,7 +468,7 @@ String joystickSettingJson(const JoystickSetting& setting, bool includeIdentity)
   if (includeIdentity) output += String("\"identity\":") + jsonString(setting.identity) +
       ",\"deviceType\":" + String(CHAIN_JOYSTICK_DEVICE_TYPE) + ",\"deviceTypeName\":\"Joystick\",\"displayName\":" + jsonString(setting.displayName) + ",\"builtIn\":false";
   else output += String("\"format\":") + jsonString(DEVICE_PRESET_FORMAT_NAME) +
-      ",\"schemaVersion\":" + String(DEVICE_PRESET_SCHEMA_VERSION) + ",\"deviceType\":" + String(CHAIN_JOYSTICK_DEVICE_TYPE) + ",\"deviceTypeName\":\"Joystick\"";
+      ",\"schemaVersion\":" + String(DEVICE_PRESET_SCHEMA_VERSION_PINGPONG) + ",\"deviceType\":" + String(CHAIN_JOYSTICK_DEVICE_TYPE) + ",\"deviceTypeName\":\"Joystick\"";
   output += String(",\"joystick\":{\"xAddress\":") + jsonString(setting.xAddress) +
       ",\"yAddress\":" + jsonString(setting.yAddress) + ",\"deadband\":" + String(setting.deadband) +
       ",\"invertX\":" + String(setting.invertX ? "true" : "false") + ",\"invertY\":" + String(setting.invertY ? "true" : "false") +
@@ -616,6 +618,10 @@ bool validatePresetSequence(JsonObjectConst object, bool legacy,
   if (!object["address"].is<const char*>() || !object["type"].is<int>() ||
       !object["start"].is<float>() || !object["end"].is<float>() ||
       !object["step"].is<float>()) return presetFieldTypeInvalid(error);
+  if (object.containsKey("progressionMode") &&
+      (!object["progressionMode"].is<int>() ||
+       object["progressionMode"].as<int>() < 0 ||
+       object["progressionMode"].as<int>() > 1)) return presetDeviceSettingInvalid(error);
   String address = object["address"].as<const char*>();
   if (!validJsonAddress(address, error)) return false;
   const int type = object["type"].as<int>();
@@ -856,6 +862,11 @@ bool jsonSequence(JsonObjectConst object, KeySequenceConfig& sequence, String& e
   sequence.start = object["start"].as<float>();
   sequence.end = object["end"].as<float>();
   sequence.step = object["step"].as<float>();
+  if (object.containsKey("progressionMode") &&
+      (!object["progressionMode"].is<int>() ||
+       object["progressionMode"].as<int>() < 0 ||
+       object["progressionMode"].as<int>() > 1)) return presetDeviceSettingInvalid(error);
+  sequence.progressionMode = static_cast<SequenceProgressionMode>(object["progressionMode"] | 0);
   if (type < TYPE_FLOAT || type > TYPE_STRING ||
       !isfinite(sequence.start) || !isfinite(sequence.end) ||
       !isfinite(sequence.step) || !validJsonAddress(sequence.address, error)) {
@@ -1017,7 +1028,8 @@ bool encoderSettingFromPresetV2(JsonObjectConst object,
       !object["format"].is<const char*>() ||
       String(object["format"].as<const char*>()) != DEVICE_PRESET_FORMAT_NAME ||
       !object["schemaVersion"].is<int>() ||
-      object["schemaVersion"].as<int>() != DEVICE_PRESET_SCHEMA_VERSION_V2 ||
+      (object["schemaVersion"].as<int>() != DEVICE_PRESET_SCHEMA_VERSION_V2 &&
+        object["schemaVersion"].as<int>() != DEVICE_PRESET_SCHEMA_VERSION_PINGPONG) ||
       !object["deviceType"].is<int>() ||
       object["deviceType"].as<int>() != CHAIN_ENCODER_DEVICE_TYPE ||
       !object["deviceTypeName"].is<const char*>() ||
@@ -1347,6 +1359,22 @@ void sendProvisioningPage(const String& message = String()) {
   sendPage(html);
 }
 
+String progressionHtml(const String& name, SequenceProgressionMode mode) {
+  const bool ping = mode == SequenceProgressionMode::PingPong;
+  return "<div class='sequence-progression'><label>" + String(tr("Progression Mode", "進行モード")) +
+      "<select name='" + name + "' onchange=\"this.closest('.sequence-progression').querySelectorAll('.progression-description').forEach((p,i)=>p.hidden=i!=this.selectedIndex)\">" +
+      "<option value='0'" + (ping ? "" : " selected") + ">" + tr("↻ Loop", "↻ ループ") + "</option>" +
+      "<option value='1'" + (ping ? " selected" : "") + ">" + tr("↔ Ping-Pong", "↔ 往復") + "</option></select></label>" +
+      "<p class='progression-description'" + (ping ? " hidden" : "") + ">" + tr("Move from Start by Step and return to Start after End.", "開始値から増減量ずつ進み、終了値を超えると開始値へ戻ります。") + "</p>" +
+      "<p class='progression-description'" + (ping ? "" : " hidden") + ">" + tr("Move from Start to End by Step and reverse at both ends.", "開始値から終了値まで増減量ずつ進み、両端で折り返します。") + "</p></div>";
+}
+
+bool parseProgression(const String& text, SequenceProgressionMode& mode) {
+  if (text.isEmpty() || text == "0") { mode = SequenceProgressionMode::Loop; return true; }
+  if (text == "1") { mode = SequenceProgressionMode::PingPong; return true; }
+  return false;
+}
+
 String typeSelectHtml(const String& name, ValueType current,
                       bool validateValue = false) {
   String html = "<select class='type' name='" + name + "'";
@@ -1477,9 +1505,7 @@ void appendKeyCard(String& html, const KeySetting& setting, size_t cardIndex,
   html += setting.mode == MODE_SEQUENCE ? F("block") : F("none");
   html += F("'><h3>");
   html += tr("Advance the value on each press", "押すたびに値を進める");
-  html += F("</h3><p class='note'>");
-  html += tr("Move from Start by Step and return to Start after End.", "開始値から増減量ずつ進み、終了値を超えると開始値へ戻ります。");
-  html += F("</p><div class='seq-grid'><div class='address-field seq-address'><label>");
+  html += F("</h3><div class='seq-grid'><div class='address-field seq-address'><label>");
   html += tr("OSC Address", "OSCアドレス");
   html += F("</label><input class='osc-address' maxlength='192' required name='seq_address_");
   html += cardIndex;
@@ -1495,7 +1521,9 @@ void appendKeyCard(String& html, const KeySetting& setting, size_t cardIndex,
   html += String(setting.sequence.step, 7);
   html += F("'></div><div><label>"); html += tr("Type", "型"); html += F("</label>");
   html += typeSelectHtml("seq_type_" + String(cardIndex), setting.sequence.valueType);
-  html += F("</div></div></div></div></div>");
+  html += F("</div></div>");
+  html += progressionHtml("seq_progression_" + String(cardIndex), setting.sequence.progressionMode);
+  html += F("</div></div></div>");
 }
 
 String chainPositionBadge(const String& position, const char* type) {
@@ -1587,7 +1615,7 @@ void appendEncoderCard(String& html, const EncoderSetting& persistedSetting,
   html += "<div id='seq-" + idx + "' class='sequence-card' style='display:" + String(pushMode == MODE_SEQUENCE ? "block" : "none") + "'><h3>" + String(tr("Push Sequence", "プッシュシーケンス")) + "</h3><div class='seq-grid'>";
   html += "<div class='address-field seq-address'><label>" + String(tr("OSC Address", "OSCアドレス")) + "</label><input class='osc-address' maxlength='192' required name='seq_address_" + idx + "' value='" + htmlEscape(setting.clickSequence.address) + "' oninput='limitAndValidate(this,192)'><small><span class='err'></span><span class='bytes'></span></small></div>";
   html += "<div><label>" + String(tr("Start", "開始値")) + "</label><input type='number' step='any' required name='seq_start_" + idx + "' value='" + String(setting.clickSequence.start, 7) + "'></div><div><label>" + String(tr("End", "終了値")) + "</label><input type='number' step='any' required name='seq_end_" + idx + "' value='" + String(setting.clickSequence.end, 7) + "'></div>";
-  html += "<div><label>" + String(tr("Step", "増減量")) + "</label><input type='number' step='any' required name='seq_step_" + idx + "' value='" + String(setting.clickSequence.step, 7) + "'></div><div><label>" + String(tr("Type", "型")) + "</label>" + typeSelectHtml("seq_type_" + idx, setting.clickSequence.valueType) + "</div></div></div>";
+  html += "<div><label>" + String(tr("Step", "増減量")) + "</label><input type='number' step='any' required name='seq_step_" + idx + "' value='" + String(setting.clickSequence.step, 7) + "'></div><div><label>" + String(tr("Type", "型")) + "</label>" + typeSelectHtml("seq_type_" + idx, setting.clickSequence.valueType) + "</div></div>" + progressionHtml("seq_progression_" + idx, setting.clickSequence.progressionMode) + "</div>";
   String resetValue = setting.resetValue;
   if (!setting.resetValueConfigured)
     resetValue = setting.rotationMode == ENCODER_ROTATION_AMOUNT
@@ -1718,7 +1746,7 @@ void appendJoystickCard(String& html, const JoystickSetting& setting, size_t car
   html+="<div class='joystick-invert'><label><input type='checkbox' name='joy_inv_x_"+idx+"' value='1'"+String(setting.invertX?" checked":"")+"><span>"+tr("Invert X (+/-)","X軸反転 (+/-)")+"</span></label><label><input type='checkbox' name='joy_inv_y_"+idx+"' value='1'"+String(setting.invertY?" checked":"")+"><span>"+tr("Invert Y (+/-)","Y軸反転 (+/-)")+"</span></label></div>";
   html+="<div><label>"+String(tr("Minimum Change","最小変化量"))+"</label><input type='number' min='1' max='254' name='joy_deadband_"+idx+"' value='"+String(setting.deadband)+"'></div><div><label>"+String(tr("Out Min","出力最小値"))+"</label><input type='number' step='any' name='joy_out_min_"+idx+"' value='"+String(setting.outputMin,7)+"'></div><div><label>"+String(tr("Out Max","出力最大値"))+"</label><input type='number' step='any' name='joy_out_max_"+idx+"' value='"+String(setting.outputMax,7)+"'></div><div><label>"+String(tr("Out Type","出力の型"))+"</label>"+typeSelectHtml("joy_out_type_"+idx,setting.outputType)+"</div><p class='note joystick-address'>"+String(tr("Changes smaller than Minimum Change do not send OSC messages.","最小変化量に満たない変化ではOSCメッセージを送信しません。"))+"</p></div></div>";
   html+="<div class='click-section'><h3>"+String(tr("Joystick Click","ジョイスティッククリック"))+"</h3><div class='key-grid'><div><label>"+String(tr("Click Mode","クリックモード"))+"</label><select name='mode_"+idx+"' onchange=\"toggleKeyMode('pr-"+idx+"','seq-"+idx+"',this)\"><option value='0'"+String(setting.clickMode==MODE_PRESS_RELEASE?" selected":"")+">"+tr("Press / Release","押した時／離した時")+"</option><option value='1'"+String(setting.clickMode==MODE_SEQUENCE?" selected":"")+">"+tr("Sequence","シーケンス")+"</option></select></div></div>"+pressReleaseHtml(idx,click,setting.clickMode==MODE_SEQUENCE);
-  html+="<div id='seq-"+idx+"' class='sequence-card' style='display:"+String(setting.clickMode==MODE_SEQUENCE?"block":"none")+"'><h3>"+String(tr("Click Sequence","クリックシーケンス"))+"</h3><div class='seq-grid'><div class='address-field seq-address'><label>"+String(tr("OSC Address","OSCアドレス"))+"</label><input class='osc-address' maxlength='192' required name='seq_address_"+idx+"' value='"+htmlEscape(setting.clickSequence.address)+"' oninput='limitAndValidate(this,192)'><small><span class='err'></span><span class='bytes'></span></small></div><div><label>"+tr("Start","開始値")+"</label><input type='number' step='any' name='seq_start_"+idx+"' value='"+String(setting.clickSequence.start,7)+"'></div><div><label>"+tr("End","終了値")+"</label><input type='number' step='any' name='seq_end_"+idx+"' value='"+String(setting.clickSequence.end,7)+"'></div><div><label>"+tr("Step","増減量")+"</label><input type='number' step='any' name='seq_step_"+idx+"' value='"+String(setting.clickSequence.step,7)+"'></div><div><label>"+tr("Type","型")+"</label>"+typeSelectHtml("seq_type_"+idx,setting.clickSequence.valueType)+"</div></div></div></div></div></div>";
+  html+="<div id='seq-"+idx+"' class='sequence-card' style='display:"+String(setting.clickMode==MODE_SEQUENCE?"block":"none")+"'><h3>"+String(tr("Click Sequence","クリックシーケンス"))+"</h3><div class='seq-grid'><div class='address-field seq-address'><label>"+String(tr("OSC Address","OSCアドレス"))+"</label><input class='osc-address' maxlength='192' required name='seq_address_"+idx+"' value='"+htmlEscape(setting.clickSequence.address)+"' oninput='limitAndValidate(this,192)'><small><span class='err'></span><span class='bytes'></span></small></div><div><label>"+tr("Start","開始値")+"</label><input type='number' step='any' name='seq_start_"+idx+"' value='"+String(setting.clickSequence.start,7)+"'></div><div><label>"+tr("End","終了値")+"</label><input type='number' step='any' name='seq_end_"+idx+"' value='"+String(setting.clickSequence.end,7)+"'></div><div><label>"+tr("Step","増減量")+"</label><input type='number' step='any' name='seq_step_"+idx+"' value='"+String(setting.clickSequence.step,7)+"'></div><div><label>"+tr("Type","型")+"</label>"+typeSelectHtml("seq_type_"+idx,setting.clickSequence.valueType)+"</div></div>"+progressionHtml("seq_progression_"+idx,setting.clickSequence.progressionMode)+"</div></div></div></div>";
 }
 
 void appendSavedJoystickCard(String& html, const JoystickSetting& setting) {
@@ -2035,6 +2063,7 @@ bool readKeySetting(size_t formIndex, KeySetting& candidate) {
   candidate.sequence.end = strtof(endText.c_str(), &endEnd);
   candidate.sequence.step = strtof(stepText.c_str(), &stepEnd);
   candidate.sequence.valueType = static_cast<ValueType>(constrain(server.arg("seq_type" + suffix).toInt(), 0, 2));
+  if (!parseProgression(server.arg("seq_progression" + suffix), candidate.sequence.progressionMode)) return false;
   valid = valid && startEnd != startText.c_str() && *startEnd == '\0' &&
           endEnd != endText.c_str() && *endEnd == '\0' &&
           stepEnd != stepText.c_str() && *stepEnd == '\0' &&
@@ -2213,6 +2242,7 @@ bool readEncoderSetting(size_t formIndex, EncoderSetting& candidate) {
           readFloat("seq_step", candidate.clickSequence.step);
   candidate.clickSequence.valueType = static_cast<ValueType>(constrain(
       server.arg("seq_type" + suffix).toInt(), 0, 2));
+  if (!parseProgression(server.arg("seq_progression" + suffix), candidate.clickSequence.progressionMode)) return false;
   keySettingsNormalizeSequence(candidate.clickSequence);
   return valid;
 }
@@ -2282,7 +2312,7 @@ bool readJoystickSetting(size_t formIndex, JoystickSetting& candidate) {
   const String suffix="_"+String(formIndex),identity=server.arg("identity"+suffix);JoystickSetting* current=nullptr;for(size_t i=0;i<joystickSettingsCount();++i){JoystickSetting* s=joystickSettingsAt(i);if(s&&s->identity==identity&&s->connectedPortMask){current=s;break;}}if(!current)return false;candidate=*current;candidate.displayName=server.arg("display_name"+suffix);candidate.displayName.trim();candidate.xAddress=server.arg("joy_x"+suffix);candidate.yAddress=server.arg("joy_y"+suffix);candidate.xAddress.trim();candidate.yAddress.trim();const bool validJoyDeadband=parseBoundedInteger(server.arg("joy_deadband"+suffix),1,254,candidate.deadband);candidate.invertX=server.hasArg("joy_inv_x"+suffix);candidate.invertY=server.hasArg("joy_inv_y"+suffix);candidate.clickMode=server.arg("mode"+suffix).toInt()==MODE_SEQUENCE?MODE_SEQUENCE:MODE_PRESS_RELEASE;
   auto number=[&](const String& name,float& value){String text=server.arg(name+suffix);if(text.isEmpty())return false;errno=0;char* end=nullptr;value=strtof(text.c_str(),&end);return errno!=ERANGE&&end!=text.c_str()&&*end=='\0'&&isfinite(value);};String error;if(candidate.displayName.isEmpty()||candidate.displayName.length()>64||!validJsonAddress(candidate.xAddress,error)||!validJsonAddress(candidate.yAddress,error)||!validJoyDeadband||!number("joy_out_min",candidate.outputMin)||!number("joy_out_max",candidate.outputMax))return false;candidate.outputType=(ValueType)constrain(server.arg("joy_out_type"+suffix).toInt(),0,2);
   int pc=server.arg("p_count"+suffix).toInt(),rc=server.arg("r_count"+suffix).toInt();if(pc<0||rc<0||pc+rc>MAX_KEY_OSC_MESSAGES)return false;candidate.pressMessageCount=pc;candidate.releaseMessageCount=rc;bool valid=true;auto readMessages=[&](bool press){uint8_t count=press?candidate.pressMessageCount:candidate.releaseMessageCount;KeyOscMessage* messages=press?candidate.pressMessages:candidate.releaseMessages;const String prefix=press?"p":"r";for(uint8_t i=0;valid&&i<count;++i){String item=suffix+"_"+String(i);messages[i].address=server.arg(prefix+"_address"+item);messages[i].address.trim();messages[i].valueStr=server.arg(prefix+"_value"+item);messages[i].valueType=(ValueType)constrain(server.arg(prefix+"_type"+item).toInt(),0,2);String e;valid=validJsonAddress(messages[i].address,e)&&messages[i].valueStr.length()<=128;if(valid&&messages[i].valueType==TYPE_INT){int32_t parsed;valid=parseInt32(messages[i].valueStr,parsed);}else if(valid&&messages[i].valueType==TYPE_FLOAT){char* end=nullptr;float v=strtof(messages[i].valueStr.c_str(),&end);valid=end!=messages[i].valueStr.c_str()&&*end=='\0'&&isfinite(v);}}};readMessages(true);readMessages(false);
-  candidate.clickSequence.address=server.arg("seq_address"+suffix);candidate.clickSequence.address.trim();valid=valid&&validJsonAddress(candidate.clickSequence.address,error)&&number("seq_start",candidate.clickSequence.start)&&number("seq_end",candidate.clickSequence.end)&&number("seq_step",candidate.clickSequence.step);candidate.clickSequence.valueType=(ValueType)constrain(server.arg("seq_type"+suffix).toInt(),0,2);keySettingsNormalizeSequence(candidate.clickSequence);return valid;
+  candidate.clickSequence.address=server.arg("seq_address"+suffix);candidate.clickSequence.address.trim();valid=valid&&validJsonAddress(candidate.clickSequence.address,error)&&number("seq_start",candidate.clickSequence.start)&&number("seq_end",candidate.clickSequence.end)&&number("seq_step",candidate.clickSequence.step);candidate.clickSequence.valueType=(ValueType)constrain(server.arg("seq_type"+suffix).toInt(),0,2);valid=parseProgression(server.arg("seq_progression"+suffix),candidate.clickSequence.progressionMode)&&valid;keySettingsNormalizeSequence(candidate.clickSequence);return valid;
 }
 
 void sendActionResult(int status, const String& message) {
@@ -2588,8 +2618,11 @@ void handleImportDevicePreset() {
   const bool encoderV2Preset =
       format == DEVICE_PRESET_FORMAT_NAME &&
       presetTypeForSchema == CHAIN_ENCODER_DEVICE_TYPE &&
-      presetSchemaVersion == DEVICE_PRESET_SCHEMA_VERSION_V2;
+      (presetSchemaVersion == DEVICE_PRESET_SCHEMA_VERSION_V2 ||
+       presetSchemaVersion == DEVICE_PRESET_SCHEMA_VERSION_PINGPONG) &&
+      root["encoder"]["rotationMode"].is<const char*>();
   if (presetSchemaVersion != DEVICE_PRESET_SCHEMA_VERSION &&
+      presetSchemaVersion != DEVICE_PRESET_SCHEMA_VERSION_PINGPONG &&
       !encoderV2Preset) {
     server.send(400, "text/plain; charset=utf-8",
                 tr("E_PRESET_SCHEMA_UNSUPPORTED: The preset `schemaVersion` is missing or unsupported. Use a preset exported by a compatible product version.",
@@ -2971,6 +3004,7 @@ void handleSaveKey() {
   candidate.sequence.valueType = static_cast<ValueType>(constrain(
       server.arg("seq_type").toInt(), static_cast<int>(TYPE_FLOAT),
       static_cast<int>(TYPE_STRING)));
+  valid = parseProgression(server.arg("seq_progression"), candidate.sequence.progressionMode) && valid;
   valid = valid && startEnd != startText.c_str() && *startEnd == '\0' &&
           endEnd != endText.c_str() && *endEnd == '\0' &&
           stepEnd != stepText.c_str() && *stepEnd == '\0' &&

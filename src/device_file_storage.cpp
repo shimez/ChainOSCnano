@@ -76,6 +76,7 @@ void addSequence(JsonObject object, const KeySequenceConfig& sequence) {
   object["start"] = sequence.start;
   object["end"] = sequence.end;
   object["step"] = sequence.step;
+  object["progressionMode"] = static_cast<uint8_t>(sequence.progressionMode);
 }
 
 bool readMessage(JsonObjectConst object, KeyOscMessage& message) {
@@ -113,7 +114,13 @@ bool readSequence(JsonObjectConst object, KeySequenceConfig& sequence) {
   sequence.start = object["start"].as<float>();
   sequence.end = object["end"].as<float>();
   sequence.step = object["step"].as<float>();
+  if (object.containsKey("progressionMode") &&
+      (!object["progressionMode"].is<int>() ||
+       object["progressionMode"].as<int>() < 0 ||
+       object["progressionMode"].as<int>() > 1)) return false;
+  sequence.progressionMode = static_cast<SequenceProgressionMode>(object["progressionMode"] | 0);
   sequence.current = sequence.start;
+  sequence.direction = SequenceDirection::Forward;
   return isfinite(sequence.start) && isfinite(sequence.end) &&
          isfinite(sequence.step);
 }
