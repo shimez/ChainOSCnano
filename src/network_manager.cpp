@@ -3110,7 +3110,13 @@ void handleForgetWifi() {
   const bool cleared = systemSettingsClearWifi();
   NANO_VERBOSE_LOGF("[ChainOSCnano][NET] credentials_cleared=%s\n",
                 cleared ? "true" : "false");
+  if (!cleared) {
+    server.send(507, "text/plain; charset=utf-8",
+                tr("Could not delete Wi-Fi settings.", "Wi-Fi設定を削除できませんでした。"));
+    return;
+  }
   String html = pageStart("Wi-Fi Settings Deleted");
+  html += F("<script>history.replaceState(null,'','/')</script>");
   html += F("<h1>ChainOSCnano Settings</h1><div class='card'><h2>"); html += tr("Wi-Fi settings deleted", "Wi-Fi設定を削除しました");
   html += F("</h2><p class='status'>"); html += tr("Restarting in setup mode…", "設定モードで再起動します…"); html += F("</p></div>");
   sendPage(html);
