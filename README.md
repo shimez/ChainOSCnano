@@ -11,17 +11,11 @@ M5NanoC6とM5Stack Chainデバイスを組み合わせ、コンパクトなOSC�
 
 ## 現在のバージョン
 
-### v1.2.6 — Encoder v2に対応
+### v1.2.10
 
-ChainOSCminiをベースにEncoder v2へ対応し、新規Encoderの初期設定をv2形式へ変更しました。
+ChainOSCminiをベースに、Encoder v2とKey SequenceのLoop／Ping-Pongモードに対応しています。
 
-- Encoder v2の回転量／回転方向モード、保存、実行時処理に対応
-- Legacy設定からv2候補を確認して移行できるWeb UIを追加
-- Encoder Device Preset v1／v2のImport／Exportに対応
-- NVS／LittleFSに設定がない新規Encoderはv2設定で開始
-- Angle／Joystick／ToFのMinimum Change表記を整理
-- Angleの分解能変更直後の不要なOSC送信を防止
-- JoystickのMinimum Change判定をX／Y各軸で独立して管理
+- Wi-Fi設定の削除後、古いタブを更新しても新しい設定が削除されないよう改善
 
 過去の変更内容は[`CHANGELOG.md`](CHANGELOG.md)を参照してください。
 

@@ -4,7 +4,18 @@ ChainOSCnanoの主な変更をこのファイルに記録します。
 
 形式はKeep a Changelogを参考にし、バージョン番号はSemantic Versioningに従います。
 
-## [Unreleased](https://github.com/shimez/ChainOSCnano/compare/v1.2.9...HEAD)
+## [Unreleased](https://github.com/shimez/ChainOSCnano/compare/v1.2.10...HEAD)
+
+## [1.2.10](https://github.com/shimez/ChainOSCnano/compare/v1.2.9...v1.2.10) - 2026-09-23
+
+### Added
+
+- Key SequenceにPing-Pongモードを追加
+
+### Fixed
+
+- Wi-Fi設定削除後に古いタブを再読み込みすると、新しく保存したWi-Fi設定まで削除される問題を修正
+- Wi-Fi設定の削除に失敗した場合に成功画面を表示せず、エラーを通知するよう修正
 
 ## [1.2.9](https://github.com/shimez/ChainOSCnano/compare/v1.2.8...v1.2.9) - 2026-09-23
 
